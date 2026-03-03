@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>gioco di teto figo</title>
+<title>BIRDBRAIN Rhythm Ritardo Note</title>
 <style>
 body {margin:0;overflow:hidden;font-family:Arial;background:black;color:white;}
 #score,#combo{position:absolute;top:10px;font-size:24px;z-index:10;}
@@ -69,7 +69,7 @@ function drawNotes(currentTime){
     ctx.fillStyle='red';
     notes.forEach(note=>{
         if(note.hit) return;
-        const y=(note.time-currentTime)*400; 
+        const y=(note.time-currentTime)*400; // note dall'alto
         if(y > canvas.height) return;
         const size=40,radius=8;
         ctx.beginPath();
@@ -125,7 +125,7 @@ document.addEventListener("keydown",e=>{
             if(y>=canvas.height-110 && y<=canvas.height-50){
                 note.hit=true;
                 hit=true;
-                // Effetti luminosi multipli
+                // effetti luminosi multipli
                 for(let i=0;i<6;i++){
                     effects.push({
                         x:note.x+20,
@@ -161,7 +161,7 @@ function setupAudio() {
     dataArray=new Uint8Array(analyser.frequencyBinCount);
 }
 
-function generateNotes() {
+function generateNotes(){
     if(!gameRunning) return;
     analyser.getByteFrequencyData(dataArray);
     let sum=0;
@@ -184,25 +184,29 @@ function gameLoop(){
     requestAnimationFrame(gameLoop);
 }
 
-// --- Start con cinematica ---
+// --- Start con ritardo note ---
 startBtn.addEventListener("click",()=>{
     if(gameRunning) return;
     gameRunning=true;
     document.getElementById("menu").style.display="none";
     setupAudio();
 
-    // Partenza cinematica
+    // Cinematica iniziale
     bg.style.opacity=0;
     particles.push({x:canvas.width/2, y:canvas.height/2, size:60, vy:2, alpha:1, color:{r:255,g:255,b:100}});
     setTimeout(()=>{
-        bg.style.opacity=1; // fade-in sfondo
+        bg.style.opacity=1;
         hitLine.style.display="block";
-        hitLine.style.opacity=1; // fade-in linea
+        hitLine.style.opacity=1;
         bgm.currentTime=0;
         bgm.play();
+    },1500);
+
+    // Generazione note dopo 2 secondi
+    setTimeout(()=>{
         generateNotes();
         requestAnimationFrame(gameLoop);
-    },1500);
+    },2000);
 });
 
 settingsBtn.addEventListener("click",()=>{
