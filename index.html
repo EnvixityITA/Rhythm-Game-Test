@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rhythm Game BPM</title>
 <style>
-/* ---------------------------- */
 body {margin:0;overflow:hidden;font-family:Arial;background:black;color:white;}
 #score,#combo,#rank{position:absolute;top:10px;font-size:24px;z-index:10;}
 #score{left:10px;} #combo{left:200px;} #rank{left:400px;}
@@ -36,10 +35,7 @@ button, select{font-size:18px;padding:10px 20px;margin:5;cursor:pointer;}
   background-size: 200% 200%;animation: rainbowMove 5s linear infinite;
   opacity:0;transition:opacity 0.5s;
 }
-@keyframes rainbowMove {
-  from {background-position: 0 0;}
-  to {background-position: 200% 0;}
-}
+@keyframes rainbowMove { from {background-position: 0 0;} to {background-position: 200% 0;} }
 </style>
 </head>
 <body>
@@ -75,8 +71,6 @@ button, select{font-size:18px;padding:10px 20px;margin:5;cursor:pointer;}
 <audio id="bgm" crossorigin="anonymous"></audio>
 
 <script>
-// ⬇️ Tutto il JS è qui dentro ⬇️
-
 window.onload = function() {
 const canvas=document.getElementById("gameCanvas");
 const ctx=canvas.getContext("2d");
@@ -127,7 +121,7 @@ songSelector.addEventListener("change", () => {
 
 startBtn.addEventListener("click",()=>{
     if(gameRunning) return;
-    notes=[ ]; lastBeat=0;
+    notes=[]; lastBeat=0;
     score=0; combo=0; totalHits=0; totalPerfect=0;
 
     const bgImg=new Image();
@@ -140,11 +134,18 @@ startBtn.addEventListener("click",()=>{
     gameRunning=true;
     document.getElementById("menu").style.display="none";
 
+    // Nascondiamo barra difficoltà
+    difficultyBar.style.display="none";
+
+    // Creiamo le etichette dei tasti
     for(let i=0;i<columns;i++){
         let label=document.createElement("div");
         label.id="label"+i;
         label.className="columnLabel";
         label.innerText=columnKeys[i];
+        label.style.bottom="30px";
+        label.style.position="absolute";
+        label.style.left=(i*columnWidth + columnWidth/2) + "px";
         document.body.appendChild(label);
     }
     hitLine.style.opacity=1;
@@ -213,6 +214,13 @@ function drawNotes(deltaTime){
         p.x+=p.vx; p.y+=p.vy; p.alpha-=0.03;
         if(p.alpha<=0)particles.splice(i,1);
     }
+
+    // aggiorna posizioni dei tasti
+    for(let i=0;i<columns;i++){
+        const x=i*columnWidth + columnWidth/2;
+        const label=document.getElementById("label"+i);
+        if(label) label.style.left = x+"px";
+    }
 }
 
 function animateHitLine(){hitLine.style.background="rgba(255,255,255,1)"; setTimeout(()=>{hitLine.style.background="rgba(255,255,255,0.5)";},100);}
@@ -263,7 +271,7 @@ function gameLoop(timestamp){
     drawNotes(deltaTime);
     requestAnimationFrame(gameLoop);
 }
-}; // --------- load end
+};
 </script>
 </body>
 </html>
