@@ -1,10 +1,169 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
-    <title>Il mio sito</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>War Thunder Nations</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: black;
+    color: white;
+    overflow-x: hidden;
+}
+
+/* PARTICELLE */
+#stars {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: black;
+    z-index: -1;
+}
+
+/* CONTENUTO */
+section {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    opacity: 0;
+    transform: translateY(50px);
+    transition: 1s;
+}
+
+section.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* TITOLI */
+h1 {
+    font-size: 3em;
+    margin-bottom: 20px;
+}
+
+/* BOTTONI NAZIONI */
+.buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+button {
+    padding: 15px 25px;
+    border: none;
+    border-radius: 30px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: 0.3s;
+    background: #222;
+    color: white;
+    border: 2px solid #555;
+}
+
+button:hover {
+    background: crimson;
+    transform: scale(1.1);
+}
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+    h1 { font-size: 2em; }
+}
+</style>
 </head>
+
 <body>
-    <h1>Ciao mondo!</h1>
-    <p>Questo è il mio primo sito su GitHub.</p>
+
+<canvas id="stars"></canvas>
+
+<section>
+    <h1>War Thunder Nations 🌌</h1>
+    <p>Scegli la tua nazione:</p>
+
+    <div class="buttons">
+        <button onclick="alert('USA 🇺🇸')">USA</button>
+        <button onclick="alert('Germania 🇩🇪')">Germania</button>
+        <button onclick="alert('URSS 🇷🇺')">URSS</button>
+        <button onclick="alert('Gran Bretagna 🇬🇧')">Gran Bretagna</button>
+        <button onclick="alert('Giappone 🇯🇵')">Giappone</button>
+        <button onclick="alert('Italia 🇮🇹')">Italia</button>
+        <button onclick="alert('Francia 🇫🇷')">Francia</button>
+        <button onclick="alert('Svezia 🇸🇪')">Svezia</button>
+        <button onclick="alert('Cina 🇨🇳')">Cina</button>
+        <button onclick="alert('Israele 🇮🇱')">Israele</button>
+    </div>
+</section>
+
+<section>
+    <h1>Combatti nei cieli ✈️</h1>
+</section>
+
+<section>
+    <h1>Domina con i carri armati 🚜</h1>
+</section>
+
+<script>
+/* STELLE ANIMATE */
+const canvas = document.getElementById("stars");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let stars = [];
+
+for (let i = 0; i < 200; i++) {
+    stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 2,
+        velocity: Math.random() * 0.5
+    });
+}
+
+function animateStars() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white";
+
+    stars.forEach(star => {
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        star.y += star.velocity;
+        if (star.y > canvas.height) {
+            star.y = 0;
+            star.x = Math.random() * canvas.width;
+        }
+    });
+
+    requestAnimationFrame(animateStars);
+}
+
+animateStars();
+
+/* ANIMAZIONE SCROLL */
+const sections = document.querySelectorAll("section");
+
+window.addEventListener("scroll", () => {
+    sections.forEach(section => {
+        const position = section.getBoundingClientRect().top;
+        const screenPosition = window.innerHeight / 1.2;
+
+        if (position < screenPosition) {
+            section.classList.add("show");
+        }
+    });
+});
+</script>
+
 </body>
 </html>
