@@ -84,13 +84,13 @@ let columnCodes=["KeyD","KeyF","KeyJ","KeyK"];
 const columnWidth=canvas.width/columns;
 let noteSpeed=400; // velocità note px/sec
 
-// --- Song info con BPM ---
+// --- Song info con BPM e sfondi ---
 const songs={
     "BIRDBRAIN":{mp3:"BIRDBRAIN.mp3", bg:"immagine_2026-03-03_204259655.png", BPM:140},
-    "Mesmerizer":{mp3:"mesmerizer.mp3", bg:"immagine_2026-03-03_214702471.png", BPM:120}
+    "Mesmerizer":{mp3:"mesmerizer.mp3", bg:"immagine_2026-03-03_221829535.png", BPM:120}
 };
 let currentSong = songs[songSelector.value];
-songSelector.addEventListener("change",()=>{currentSong = songs[songSelector.value];});
+songSelector.addEventListener("change",()=>{currentSong = songs[songSelector.value]; BPM=currentSong.BPM; beatInterval=60/BPM;});
 
 // --- Start game ---
 startBtn.addEventListener("click",()=>{
@@ -98,8 +98,13 @@ startBtn.addEventListener("click",()=>{
     notes=[];
     lastBeat=0;
     score=0; combo=0; totalHits=0; totalPerfect=0;
-    bg.style.backgroundImage=`url('${currentSong.bg}')`;
-    bg.style.opacity=1;
+    // Carica sfondo
+    const bgImg = new Image();
+    bgImg.src = currentSong.bg;
+    bgImg.onload = () => {
+        bg.style.backgroundImage = `url('${currentSong.bg}')`;
+        bg.style.opacity=1;
+    };
     bgm.src=currentSong.mp3;
     bgm.currentTime=0;
     bgm.play();
@@ -152,7 +157,19 @@ function drawNotes(deltaTime){
     notes.forEach(note=>{
         if(note.hit) return;
         note.y += noteSpeed*deltaTime;
-        if(note.y>canvas.height) note.hit=true;
+
+        // Nota mancata
+        if(note.y>canvas.height){ 
+            note.hit = true;
+            totalHits++; 
+            score -= 50;
+            if(score<0) score=0;
+            combo = 0;
+            document.getElementById("score").innerText="Punti: "+score;
+            document.getElementById("combo").innerText="Combo: "+combo+"x";
+            updateRank();
+        }
+
         ctx.fillStyle="red";
         ctx.fillRect(note.column*columnWidth+10, note.y, columnWidth-20, 30);
     });
@@ -177,6 +194,14 @@ function updateRank(){
     else if(score>5000) rank="B";
     else if(score>3000) rank="C";
     rankDisplay.innerText="Rank: "+rank;
+
+    // Bordo arcobaleno se S
+    if(rank==="S"){
+        document.body.style.border="10px solid";
+        document.body.style.borderImage="linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet) 1";
+    }else{
+        document.body.style.border="none";
+    }
 }
 
 // --- Controllo tasti ---
