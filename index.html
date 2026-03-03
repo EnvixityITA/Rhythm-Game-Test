@@ -23,22 +23,23 @@ button, select{font-size:18px;padding:10px 20px;margin:5; cursor:pointer;}
 #keySettings td{border:1px solid rgba(255,255,255,0.3);padding:8px 15px;text-align:center;cursor:pointer;color:white;font-weight:bold;}
 #keySettings td:hover{background:rgba(255,255,255,0.2);}
 #difficultyBar{position:absolute;top:50px;left:50%;transform:translateX(-50%);height:25px;width:200px;background:gray;border-radius:5px;text-align:center;line-height:25px;color:black;font-weight:bold;z-index:15;}
+
+/* Arcobaleno bordi laterali */
 #rainbowBorder {
   position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  pointer-events:none;
-  z-index:50;
-  background:conic-gradient(red,orange,yellow,green,blue,indigo,violet,red);
+  top:0; left:0; width:100%; height:100%;
+  pointer-events:none; z-index:50;
+  background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);
+  background-size: 200% 200%;
+  animation: rainbowMove 5s linear infinite;
   opacity:0;
   transition:opacity 0.5s;
-  animation:rotateRainbow 5s linear infinite;
+  box-shadow: 0 0 20px 10px red, inset 0 0 20px 10px red;
 }
-@keyframes rotateRainbow {
-  from {transform:rotate(0deg);}
-  to {transform:rotate(360deg);}
+
+@keyframes rainbowMove {
+  from {background-position: 0 0;}
+  to {background-position: 200% 0;}
 }
 </style>
 </head>
@@ -100,28 +101,24 @@ canvas.height=window.innerHeight;
 let notes=[], gameRunning=false;
 let score=0, combo=0, totalHits=0, totalPerfect=0;
 
-// --- Config colonne e tasti ---
 const columns=4;
 let columnKeys=["D","F","J","K"];
 let columnCodes=["KeyD","KeyF","KeyJ","KeyK"];
 const columnWidth=canvas.width/columns;
 let noteSpeed=400;
 
-// --- Song info ---
 const songs={
     "BIRDBRAIN":{mp3:"BIRDBRAIN.mp3", bg:"immagine_2026-03-03_204259655.png", BPM:140, difficulty:"MEDIO", color:"yellow", speed:400},
     "Mesmerizer":{mp3:"mesmerizer.mp3", bg:"immagine_2026-03-03_221829535.png", BPM:120, difficulty:"DIFFICILE", color:"red", speed:500}
 };
 let currentSong = songs[songSelector.value];
 
-// --- Aggiorna barra difficoltà e velocità note ---
 function updateDifficultyDisplay(){
     difficultyBar.style.background=currentSong.color;
     difficultyBar.innerText=currentSong.difficulty;
     noteSpeed=currentSong.speed;
 }
 updateDifficultyDisplay();
-
 songSelector.addEventListener("change",()=>{
     currentSong = songs[songSelector.value];
     BPM=currentSong.BPM;
@@ -129,7 +126,6 @@ songSelector.addEventListener("change",()=>{
     updateDifficultyDisplay();
 });
 
-// --- Start game ---
 startBtn.addEventListener("click",()=>{
     if(gameRunning) return;
     notes=[];
@@ -157,29 +153,26 @@ startBtn.addEventListener("click",()=>{
     requestAnimationFrame(gameLoop);
 });
 
-// --- Settings tasti ---
 settingsBtn.addEventListener("click",()=>{keySettings.style.display = keySettings.style.display==="none"?"block":"none";});
 for(let i=0;i<columns;i++){
     document.getElementById("col"+i).addEventListener("click",()=>{
         const newKey=prompt("Inserisci nuovo tasto per colonna "+(i+1), columnKeys[i]);
         if(newKey){ columnKeys[i]=newKey.toUpperCase(); columnCodes[i]="Key"+newKey.toUpperCase(); document.getElementById("col"+i).innerText=columnKeys[i]; }
     });
-}
+});
 
-// --- Generazione note con intervallo irregolare ---
 let BPM=currentSong.BPM;
 let beatInterval=60/BPM;
 let lastBeat=0;
 function generateNotes(currentTime){
     while(currentTime - lastBeat >= beatInterval){
         const col=Math.floor(Math.random()*columns);
-        const yOffset = Math.random()*40-20; // distanza casuale
+        const yOffset = Math.random()*40-20;
         notes.push({time:currentTime,column:col,hit:false,y:-30+yOffset});
-        lastBeat += beatInterval*(0.7+Math.random()*0.6); // intervallo irregolare
+        lastBeat += beatInterval*(0.7+Math.random()*0.6);
     }
 }
 
-// --- Disegna note ---
 function drawNotes(deltaTime){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     for(let i=1;i<columns;i++){
@@ -205,10 +198,8 @@ function drawNotes(deltaTime){
     }
 }
 
-// --- Hit line ---
 function animateHitLine(){hitLine.style.background="rgba(255,255,255,1)"; setTimeout(()=>{hitLine.style.background="rgba(255,255,255,0.5)";},100);}
 
-// --- Aggiorna rank e accuracy ---
 function updateRank(){
     let accuracy=totalHits>0 ? totalPerfect/totalHits : 0;
     accuracyFill.style.width=(accuracy*100)+"%";
@@ -222,7 +213,6 @@ function updateRank(){
     rainbowBorder.style.opacity=(rank==="S")?1:0;
 }
 
-// --- Controllo tasti ---
 let keysPressed={};
 document.addEventListener("keydown",e=>{
     if(keysPressed[e.code]) return;
@@ -246,7 +236,6 @@ document.addEventListener("keydown",e=>{
 });
 document.addEventListener("keyup",e=>{keysPressed[e.code]=false;});
 
-// --- Game loop ---
 let lastTime=0;
 function gameLoop(timestamp){
     if(!gameRunning) return;
