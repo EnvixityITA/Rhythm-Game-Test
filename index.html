@@ -13,32 +13,38 @@ body {
     color: white;
 }
 
-#score {
+/* Score e Combo */
+#score, #combo {
     position: absolute;
     top: 10px;
-    left: 10px;
     font-size: 24px;
     z-index: 10;
 }
+#score { left: 10px; }
+#combo { right: 10px; }
 
-#bgCanvas, #gameCanvas {
+/* Canvas note */
+#gameCanvas {
     position: absolute;
     top:0;
     left:0;
     width: 100%;
     height: 100%;
+    z-index: 1;
 }
 
-#bgCanvas { z-index: -2; }
-#gameCanvas { z-index: 1; }
-
-#teto {
-    position: absolute;
-    bottom: 20px;
-    width: 100px;
-    z-index: 2;
-    transition: transform 0.2s;
+/* Sfondo immagine blurrata e scura */
+#bg {
+    position: fixed;
+    top:0;
+    left:0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+    background: url('immagine_2026-03-03_204259655.png') center center/cover no-repeat;
+    filter: brightness(0.4) blur(4px);
 }
+
 button {
     position: absolute;
     top:50%;
@@ -52,61 +58,29 @@ button {
 </head>
 <body>
 
+<div id="bg"></div>
 <div id="score">Punti: 0</div>
-<canvas id="bgCanvas"></canvas>
+<div id="combo">Combo: 0x</div>
 <canvas id="gameCanvas"></canvas>
-<img id="teto" src="immagine_2026-03-03_204259655.png" alt="Kasane Teto">
 
 <audio id="bgm" src="BIRDBRAIN.mp3"></audio>
 <button id="startBtn">Start!</button>
 
 <script>
 // --- Variabili ---
-const bgCanvas = document.getElementById("bgCanvas");
-const bgCtx = bgCanvas.getContext("2d");
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-const teto = document.getElementById("teto");
 const bgm = document.getElementById("bgm");
 const startBtn = document.getElementById("startBtn");
 
 let notes = [];
 let score = 0;
+let combo = 0;
+let maxCombo = 0;
 let gameRunning = false;
-let tetoX = window.innerWidth/2 - 50;
-let tetoDir = 1; // 1 = destra, -1 = sinistra
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
-bgCanvas.width = window.innerWidth;
-bgCanvas.height = window.innerHeight;
-
-// --- Sfondo animato ---
-let stars = [];
-for(let i=0;i<100;i++){
-    stars.push({x:Math.random()*window.innerWidth, y:Math.random()*window.innerHeight, r: Math.random()*2, vy: Math.random()*0.5});
-}
-function animateBG(){
-    bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
-    // sfondo gradiente
-    let gradient = bgCtx.createLinearGradient(0,0,bgCanvas.width,bgCanvas.height);
-    gradient.addColorStop(0,'#0a0a0a');
-    gradient.addColorStop(1,'#111');
-    bgCtx.fillStyle = gradient;
-    bgCtx.fillRect(0,0,bgCanvas.width,bgCanvas.height);
-
-    // stelle
-    bgCtx.fillStyle = 'white';
-    stars.forEach(s=>{
-        bgCtx.beginPath();
-        bgCtx.arc(s.x,s.y,s.r,0,Math.PI*2);
-        bgCtx.fill();
-        s.y += s.vy;
-        if(s.y>window.innerHeight){s.y=0;s.x=Math.random()*window.innerWidth;}
-    });
-    requestAnimationFrame(animateBG);
-}
-animateBG();
 
 // --- Funzioni gioco ---
 function startGame(){
@@ -123,7 +97,7 @@ function spawnNotes(){
     if(!gameRunning) return;
     const x = Math.random()*(canvas.width-30);
     notes.push({x:x, y:0, width:30, height:30});
-    setTimeout(spawnNotes, 800);
+    setTimeout(spawnNotes, 800); // ogni 0.8s
 }
 
 // Disegna note
@@ -136,44 +110,43 @@ function drawNotes(){
     });
 }
 
-// Controllo barra spaziatrice: non si può tenere premuto
+// --- Controllo barra spaziatrice: singolo colpo per pressione ---
 let keyPressed = false;
 document.addEventListener("keydown", function(e){
     if(e.code==="Space" && !keyPressed){
         keyPressed = true;
+        let hit = false;
         notes.forEach((note,index)=>{
             if(note.y + note.height >= canvas.height - 70 && note.y <= canvas.height - 40){
                 notes.splice(index,1);
-                score += 100;
-                document.getElementById("score").innerText = "Punti: " + score;
+                hit = true;
             }
         });
+        if(hit){
+            combo +=1;
+            if(combo>maxCombo) maxCombo=combo;
+            score += 100 * combo; // moltiplicatore
+        } else {
+            combo = 0; // reset combo se fallisci
+        }
+        document.getElementById("score").innerText = "Punti: " + score;
+        document.getElementById("combo").innerText = "Combo: " + combo + "x";
     }
 });
 document.addEventListener("keyup", function(e){
     if(e.code==="Space") keyPressed = false;
 });
 
-// --- Animazione Kasane Teto ---
-function animateTeto(){
-    tetoX += tetoDir*3;
-    if(tetoX + 100 > window.innerWidth) tetoDir=-1;
-    if(tetoX < 0) tetoDir=1;
-    teto.style.left = tetoX + "px";
-    teto.style.transform = tetoDir===1 ? "scaleX(1)" : "scaleX(-1)";
-}
-
 // --- Loop principale ---
 function gameLoop(){
     if(!gameRunning) return;
     drawNotes();
-    animateTeto();
     requestAnimationFrame(gameLoop);
 }
 
 // --- Start button ---
 startBtn.addEventListener("click", startGame);
-
 </script>
+
 </body>
 </html>
