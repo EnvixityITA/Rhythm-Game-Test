@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rhythm Game lol</title>
+<title>Rhythm Game BPM</title>
 <style>
 body {margin:0;overflow:hidden;font-family:Arial;background:black;color:white;}
 #score,#combo,#rank{position:absolute;top:10px;font-size:24px;z-index:10;}
@@ -32,10 +32,18 @@ button, select{font-size:18px;padding:10px 20px;margin:5;cursor:pointer;}
 #rainbowBorder {
   position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50;
   background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);
-  background-size: 200% 200%;animation: rainbowMove 5s linear infinite;
-  opacity:0;transition:opacity 0.5s;
+  background-size: 200% 200%;
+  animation: rainbowMove 5s linear infinite, rainbowWave 6s ease-in-out infinite;
+  opacity:0.05; /* 95% trasparente */
 }
-@keyframes rainbowMove { from {background-position: 0 0;} to {background-position: 200% 0;} }
+@keyframes rainbowMove {
+  from {background-position: 0 0;}
+  to {background-position: 200% 0;}
+}
+@keyframes rainbowWave {
+  0%,100% {transform: translateY(0);}
+  50% {transform: translateY(15px);}
+}
 </style>
 </head>
 <body>
@@ -133,11 +141,8 @@ startBtn.addEventListener("click",()=>{
     bgm.play();
     gameRunning=true;
     document.getElementById("menu").style.display="none";
+    difficultyBar.style.display="none"; // barra difficoltà scompare
 
-    // Nascondiamo barra difficoltà
-    difficultyBar.style.display="none";
-
-    // Creiamo le etichette dei tasti
     for(let i=0;i<columns;i++){
         let label=document.createElement("div");
         label.id="label"+i;
@@ -234,7 +239,7 @@ function updateRank(){
     else if(score>5000) rank="B";
     else if(score>3000) rank="C";
     rankDisplay.innerText="Rank: "+rank;
-    rainbowBorder.style.opacity=(rank==="S")?1:0;
+    rainbowBorder.style.opacity=(rank==="S")?0.05:0; // 95% trasparente con animazione
 }
 
 let keysPressed={};
