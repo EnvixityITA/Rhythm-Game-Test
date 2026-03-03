@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>War Thunder Nations</title>
+<title>War Thunder Wiki ITA</title>
+
+<!-- FONT MILITARE -->
+<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap" rel="stylesheet">
 
 <style>
 body {
@@ -14,7 +17,7 @@ body {
     overflow-x: hidden;
 }
 
-/* PARTICELLE */
+/* STELLE */
 #stars {
     position: fixed;
     width: 100%;
@@ -23,7 +26,7 @@ body {
     z-index: -1;
 }
 
-/* CONTENUTO */
+/* SEZIONI */
 section {
     min-height: 100vh;
     display: flex;
@@ -41,41 +44,40 @@ section.show {
     transform: translateY(0);
 }
 
-/* TITOLI */
-h1 {
-    font-size: 3em;
+/* TITOLO MILITARE */
+.main-title {
+    font-family: 'Black Ops One', cursive;
+    font-size: 4em;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    color: white;
+    text-shadow: 
+        0 0 10px red,
+        0 0 20px darkred,
+        0 0 40px crimson;
     margin-bottom: 20px;
 }
 
-/* BOTTONI NAZIONI */
-.buttons {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 30px;
+/* IMMAGINE */
+.hero-img {
+    width: 80%;
+    max-width: 600px;
+    border-radius: 15px;
+    box-shadow: 0 0 30px red;
+    margin-top: 20px;
+    transition: 0.5s;
 }
 
-button {
-    padding: 15px 25px;
-    border: none;
-    border-radius: 30px;
-    font-size: 1em;
-    cursor: pointer;
-    transition: 0.3s;
-    background: #222;
-    color: white;
-    border: 2px solid #555;
-}
-
-button:hover {
-    background: crimson;
-    transform: scale(1.1);
+.hero-img:hover {
+    transform: scale(1.05);
 }
 
 /* RESPONSIVE */
 @media (max-width: 600px) {
-    h1 { font-size: 2em; }
+    .main-title {
+        font-size: 2.5em;
+    }
 }
 </style>
 </head>
@@ -85,33 +87,15 @@ button:hover {
 <canvas id="stars"></canvas>
 
 <section>
-    <h1>War Thunder Nations 🌌</h1>
-    <p>Scegli la tua nazione:</p>
+    <h1 class="main-title">WAR THUNDER WIKI ITA</h1>
 
-    <div class="buttons">
-        <button onclick="alert('USA 🇺🇸')">USA</button>
-        <button onclick="alert('Germania 🇩🇪')">Germania</button>
-        <button onclick="alert('URSS 🇷🇺')">URSS</button>
-        <button onclick="alert('Gran Bretagna 🇬🇧')">Gran Bretagna</button>
-        <button onclick="alert('Giappone 🇯🇵')">Giappone</button>
-        <button onclick="alert('Italia 🇮🇹')">Italia</button>
-        <button onclick="alert('Francia 🇫🇷')">Francia</button>
-        <button onclick="alert('Svezia 🇸🇪')">Svezia</button>
-        <button onclick="alert('Cina 🇨🇳')">Cina</button>
-        <button onclick="alert('Israele 🇮🇱')">Israele</button>
-    </div>
-</section>
+    <!-- METTI QUI L'IMMAGINE -->
+    <img class="hero-img" src="https://upload.wikimedia.org/wikipedia/en/2/28/War_Thunder_Logo.png" alt="War Thunder">
 
-<section>
-    <h1>Combatti nei cieli ✈️</h1>
-</section>
-
-<section>
-    <h1>Domina con i carri armati 🚜</h1>
 </section>
 
 <script>
-/* STELLE ANIMATE */
+/* STELLE */
 const canvas = document.getElementById("stars");
 const ctx = canvas.getContext("2d");
 
@@ -150,7 +134,7 @@ function animateStars() {
 
 animateStars();
 
-/* ANIMAZIONE SCROLL */
+/* SCROLL ANIMATION */
 const sections = document.querySelectorAll("section");
 
 window.addEventListener("scroll", () => {
