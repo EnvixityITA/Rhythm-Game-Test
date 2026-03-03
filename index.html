@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BIRDBRAIN Rhythm con Difficoltà</title>
+<title>BIRDBRAIN 4 Colonne</title>
 <style>
 body {margin:0;overflow:hidden;font-family:Arial;background:black;color:white;}
 #score,#combo{position:absolute;top:10px;font-size:24px;z-index:10;}
@@ -59,11 +59,15 @@ let notes=[];
 let score=0;
 let combo=0;
 let gameRunning=false;
-let hitKey="Space";
+
+// --- Config colonne e tasti ---
+const columns = 4;
+const columnKeys = ["KeyD","KeyF","KeyJ","KeyK"]; // tasti per colonna
+const columnWidth = canvas.width/columns;
 
 // Parametri difficoltà
-let noteSpeed=400; // pixel/sec
-let noteCooldown=0.25; // secondi
+let noteSpeed=400;
+let noteCooldown=0.25;
 
 // --- Disegna note ---
 function drawNotes(currentTime){
@@ -73,18 +77,8 @@ function drawNotes(currentTime){
         if(note.hit) return;
         const y=(currentTime - note.time)*noteSpeed;
         if(y > canvas.height) return;
-        const size=40,radius=8;
-        ctx.beginPath();
-        ctx.moveTo(note.x+radius,y);
-        ctx.lineTo(note.x+size-radius,y);
-        ctx.quadraticCurveTo(note.x+size,y,note.x+size,y+radius);
-        ctx.lineTo(note.x+size,y+size-radius);
-        ctx.quadraticCurveTo(note.x+size,y+size,note.x+size-radius,y+size);
-        ctx.lineTo(note.x+radius,y+size);
-        ctx.quadraticCurveTo(note.x,y+size,note.x,y+size-radius);
-        ctx.lineTo(note.x,y+radius);
-        ctx.quadraticCurveTo(note.x,y,note.x+radius,y);
-        ctx.fill();
+        const size=columnWidth-20; // larghezza nota in base alla colonna
+        ctx.fillRect(note.column*columnWidth+10, y, size, 30); // rettangolo rosso
     });
 }
 
@@ -94,31 +88,30 @@ function animateHitLine(){
     setTimeout(()=>{hitLine.style.background="rgba(255,255,255,0.5)";},100);
 }
 
-// --- Controllo tasto ---
-let keyPressed=false;
+// --- Controllo tasti per 4 colonne ---
+let keysPressed={};
 document.addEventListener("keydown",e=>{
-    if(e.code===hitKey && !keyPressed){
-        keyPressed=true;
-        const currentTime=bgm.currentTime;
-        let hit=false;
-        notes.forEach(note=>{
-            if(note.hit) return;
-            const y=(currentTime - note.time)*noteSpeed;
-            if(y>=canvas.height-110 && y<=canvas.height-50){
-                note.hit=true;
-                hit=true;
-            }
-        });
-        if(hit){
-            combo++; score+=100*combo;
-            animateHitLine();
-        } else {combo=0;}
-        document.getElementById("score").innerText="Punti: "+score;
-        document.getElementById("combo").innerText="Combo: "+combo+"x";
-    }
+    if(keysPressed[e.code]) return;
+    keysPressed[e.code]=true;
+    const currentTime=bgm.currentTime;
+    let hit=false;
+    notes.forEach(note=>{
+        if(note.hit) return;
+        const y=(currentTime - note.time)*noteSpeed;
+        if(y>=canvas.height-110 && y<=canvas.height-50 && e.code===columnKeys[note.column]){
+            note.hit=true;
+            hit=true;
+        }
+    });
+    if(hit){
+        combo++; score+=100*combo;
+        animateHitLine();
+    } else {combo=0;}
+    document.getElementById("score").innerText="Punti: "+score;
+    document.getElementById("combo").innerText="Combo: "+combo+"x";
 });
 document.addEventListener("keyup",e=>{
-    if(e.code===hitKey) keyPressed=false;
+    keysPressed[e.code]=false;
 });
 
 // --- Generazione note ---
@@ -143,8 +136,8 @@ function generateNotes(){
     const avg=sum/dataArray.length;
     const currentTime=bgm.currentTime;
     if(avg>50 && (currentTime - lastNoteTime) > noteCooldown){
-        const x=Math.random()*(canvas.width-50)+25;
-        notes.push({x:x,hit:false,time:currentTime});
+        const column=Math.floor(Math.random()*columns);
+        notes.push({column:column,hit:false,time:currentTime});
         lastNoteTime=currentTime;
     }
     requestAnimationFrame(generateNotes);
@@ -158,38 +151,24 @@ function gameLoop(){
     requestAnimationFrame(gameLoop);
 }
 
-// --- Start con selezione difficoltà ---
+// --- Start con difficoltà ---
 startBtn.addEventListener("click",()=>{
     if(gameRunning) return;
 
-    // Selezione difficoltà
     const diff=prompt("Seleziona difficoltà: facile, media, difficile","media");
     switch(diff.toLowerCase()){
-        case "facile":
-            noteSpeed=300;
-            noteCooldown=0.5;
-            break;
-        case "media":
-            noteSpeed=400;
-            noteCooldown=0.25;
-            break;
-        case "difficile":
-            noteSpeed=500;
-            noteCooldown=0.15;
-            break;
-        default:
-            noteSpeed=400;
-            noteCooldown=0.25;
+        case "facile": noteSpeed=300; noteCooldown=0.5; break;
+        case "media": noteSpeed=400; noteCooldown=0.25; break;
+        case "difficile": noteSpeed=500; noteCooldown=0.15; break;
+        default: noteSpeed=400; noteCooldown=0.25;
     }
 
     gameRunning=true;
     document.getElementById("menu").style.display="none";
     setupAudio();
 
-    // Fade-in sfondo
     bg.style.opacity=1;
 
-    // Hit line fade-in
     setTimeout(()=>{
         hitLine.style.display="block";
         hitLine.style.opacity=1;
@@ -197,15 +176,14 @@ startBtn.addEventListener("click",()=>{
         bgm.play();
     },500);
 
-    // Avvio note immediato
     generateNotes();
     requestAnimationFrame(gameLoop);
 });
 
 settingsBtn.addEventListener("click",()=>{
-    const newKey=prompt("Inserisci il tasto da usare (es. Space, KeyZ, KeyX):",hitKey);
-    if(newKey) hitKey=newKey;
-    alert("Tasto impostato su: "+hitKey);
+    const newKey=prompt("Inserisci il tasto da usare (es. Space, KeyZ, KeyX):","Space");
+    if(newKey) columnKeys[0]=newKey; // puoi aggiungere personalizzazione completa
+    alert("Tasto modificato");
 });
 </script>
 </body>
