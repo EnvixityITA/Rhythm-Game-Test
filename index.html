@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rhythm Game - Fixed Version</title>
+<title>Rhythm Game - Dynamic Notes</title>
 <style>
 body {margin:0;overflow:hidden;font-family:Arial;background:black;color:white;}
 #score,#combo,#rank{position:absolute;top:10px;font-size:24px;z-index:10;}
@@ -69,21 +69,24 @@ const settingsBtn=document.getElementById("settingsBtn");
 const keySettings=document.getElementById("keySettings");
 const accuracyFill=document.getElementById("accuracyFill");
 const rankDisplay=document.getElementById("rank");
+const hitLine=document.getElementById("hitLine");
 
 canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
 
 let notes=[], gameRunning=false;
 let score=0, combo=0, totalHits=0, totalPerfect=0;
+let nextNoteIndex=0;
 
 // --- Config colonne e tasti ---
 const columns=4;
 let columnKeys=["D","F","J","K"];
 let columnCodes=["KeyD","KeyF","KeyJ","KeyK"];
 const columnWidth=canvas.width/columns;
-let noteSpeed=400, noteCooldown=0.25;
+let noteSpeed=400; // velocità note px/sec
 
-// --- Songs con spartiti corretti ---
+// --- Songs con spartiti ---
+// Nota: tempo in secondi di spawn note
 const songs={
     "BIRDBRAIN":{
         mp3:"BIRDBRAIN.mp3",
@@ -103,13 +106,13 @@ const songs={
     }
 };
 let currentSong = songs[songSelector.value];
-
 songSelector.addEventListener("change",()=>{currentSong = songs[songSelector.value];});
 
-// --- Start Game ---
+// --- Start game ---
 startBtn.addEventListener("click",()=>{
     if(gameRunning) return;
-    notes = currentSong.notes.map(n=>({...n,hit:false}));
+    notes=[];
+    nextNoteIndex=0;
     bg.style.backgroundImage=`url('${currentSong.bg}')`;
     bg.style.opacity=1;
     bgm.src=currentSong.mp3;
@@ -117,7 +120,7 @@ startBtn.addEventListener("click",()=>{
     bgm.play();
     gameRunning=true;
     document.getElementById("menu").style.display="none";
-    // Labels colonna
+
     for(let i=0;i<columns;i++){
         let label=document.createElement("div");
         label.id="label"+i;
@@ -138,8 +141,16 @@ for(let i=0;i<columns;i++){
     });
 }
 
+// --- Generazione dinamica note ---
+function generateNotes(currentTime){
+    while(nextNoteIndex < currentSong.notes.length && currentTime >= currentSong.notes[nextNoteIndex].time - 0.5){
+        notes.push({...currentSong.notes[nextNoteIndex], hit:false, y:-30});
+        nextNoteIndex++;
+    }
+}
+
 // --- Disegna note ---
-function drawNotes(currentTime){
+function drawNotes(deltaTime){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     // Linee colonne
     for(let i=1;i<columns;i++){
@@ -147,23 +158,24 @@ function drawNotes(currentTime){
         ctx.lineWidth=2;
         ctx.beginPath(); ctx.moveTo(i*columnWidth,0); ctx.lineTo(i*columnWidth,canvas.height); ctx.stroke();
     }
+    // Aggiorna posizione note
+    notes.forEach(note=>{
+        if(note.hit) return;
+        note.y += noteSpeed*deltaTime;
+        if(note.y>canvas.height) note.hit=true;
+        ctx.fillStyle="red";
+        ctx.fillRect(note.column*columnWidth+10, note.y, columnWidth-20, 30);
+    });
+    // Aggiorna label colonne
     for(let i=0;i<columns;i++){
         const x=i*columnWidth+columnWidth/2;
         const label=document.getElementById("label"+i);
         if(label) label.style.left=x+"px";
     }
-    // Note
-    notes.forEach(note=>{
-        if(note.hit) return;
-        const y=(currentTime-note.time)*noteSpeed;
-        if(y>canvas.height) return;
-        ctx.fillStyle="red";
-        ctx.fillRect(note.column*columnWidth+10, y, columnWidth-20, 30);
-    });
 }
 
-// --- Hit line animation ---
-function animateHitLine(){document.getElementById("hitLine").style.background="rgba(255,255,255,1)"; setTimeout(()=>{document.getElementById("hitLine").style.background="rgba(255,255,255,0.5)";},100);}
+// --- Hit line ---
+function animateHitLine(){hitLine.style.background="rgba(255,255,255,1)"; setTimeout(()=>{hitLine.style.background="rgba(255,255,255,0.5)";},100);}
 
 // --- Aggiorna rank e accuracy ---
 function updateRank(){
@@ -186,9 +198,11 @@ document.addEventListener("keydown",e=>{
     let hit=false;
     notes.forEach(note=>{
         if(note.hit) return;
-        const y=(currentTime-note.time)*noteSpeed;
+        const y=note.y;
         if(y>=canvas.height-110 && y<=canvas.height-50 && e.code===columnCodes[note.column]){
-            note.hit=true; hit=true; totalHits++;
+            note.hit=true;
+            hit=true;
+            totalHits++;
             const dist=Math.abs(y-(canvas.height-70));
             if(dist<10){score+=100; totalPerfect++;} else if(dist<20) score+=70; else score+=50;
         }
@@ -201,9 +215,13 @@ document.addEventListener("keydown",e=>{
 document.addEventListener("keyup",e=>{keysPressed[e.code]=false;});
 
 // --- Game loop ---
-function gameLoop(){
+let lastTime=0;
+function gameLoop(timestamp){
     if(!gameRunning) return;
-    drawNotes(bgm.currentTime);
+    const deltaTime=(timestamp-lastTime)/1000;
+    lastTime=timestamp;
+    generateNotes(bgm.currentTime);
+    drawNotes(deltaTime);
     requestAnimationFrame(gameLoop);
 }
 </script>
