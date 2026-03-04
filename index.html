@@ -4,12 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rhythm Game Pro</title>
-
 <style>
 body{margin:0;overflow:hidden;background:black;font-family:Arial;color:white}
 
-/* VIDEO */
-#bgVideo{
+/* BACKGROUND VIDEO/IMAGE */
+#bgVideo,#bgImg{
 position:absolute;
 top:50%;
 left:50%;
@@ -22,17 +21,8 @@ opacity:0;
 transition:opacity 1s, transform 0.2s ease;
 }
 
-#overlay{
-position:absolute;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.5);
-z-index:1;
-transition:background 0.2s ease;
-}
-
 /* CANVAS */
-#gameCanvas{position:absolute;z-index:2}
+#gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2}
 
 /* MENU */
 #menu{
@@ -53,17 +43,18 @@ from{opacity:0;transform:translateY(20px)}
 to{opacity:1;transform:translateY(0)}
 }
 
-.menuTitle{
-font-size:60px;
-margin-bottom:20px;
-letter-spacing:5px;
-animation:glow 2s infinite alternate;
+#logo{
+width:300px;
+margin-bottom:30px;
+animation:logoPulse 2s infinite alternate;
 }
 
-@keyframes glow{
-from{text-shadow:0 0 10px white}
-to{text-shadow:0 0 30px yellow}
+@keyframes logoPulse{
+from{transform:scale(1)}
+to{transform:scale(1.05)}
 }
+
+.menuTitle{font-size:60px;margin-bottom:20px;letter-spacing:5px;}
 
 button,select{
 padding:12px 25px;
@@ -93,7 +84,7 @@ display:none;
 z-index:10;
 }
 
-/* RESULT SCREEN */
+/* RESULTS */
 #results{
 position:absolute;
 width:100%;
@@ -107,29 +98,44 @@ background:rgba(0,0,0,0.85);
 animation:fadeIn 0.8s ease;
 }
 
-.rank{
-font-size:120px;
-animation:pop 0.6s ease;
+.rank{font-size:120px;animation:pop 0.6s ease;}
+
+@keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+
+/* NOTE COLUMNS */
+.columnBar{
+position:absolute;
+top:0;
+width:2px;
+background:rgba(255,255,255,0.3);
+height:100%;
+z-index:3;
 }
 
-@keyframes pop{
-0%{transform:scale(0)}
-100%{transform:scale(1)}
+.columnKey{
+position:absolute;
+bottom:30px;
+width:100px;
+text-align:center;
+transform:translateX(-50%);
+font-size:20px;
+color:rgba(255,255,255,0.8);
+pointer-events:none;
 }
 </style>
 </head>
-
 <body>
 
 <video id="bgVideo" autoplay muted loop playsinline></video>
-<div id="overlay"></div>
+<img id="bgImg">
 
 <canvas id="gameCanvas"></canvas>
 
 <div id="menu">
-<div class="menuTitle">RHYTHM GAME</div>
+<img id="logo" src="Risorsa_1sinny.png">
 <select id="songSelect">
 <option value="BIRDBRAIN">BIRDBRAIN</option>
+<option value="Mesmerizer">Mesmerizer</option>
 </select>
 <button id="startBtn">START</button>
 </div>
@@ -143,7 +149,7 @@ animation:pop 0.6s ease;
 <button onclick="location.reload()">RIGIOCA</button>
 </div>
 
-<audio id="bgm" src="BIRDBRAIN.mp3"></audio>
+<audio id="bgm"></audio>
 <audio id="startSfx" src="startSound.mp3"></audio>
 
 <script>
@@ -153,43 +159,85 @@ canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
 
 const bgVideo=document.getElementById("bgVideo");
-const overlay=document.getElementById("overlay");
+const bgImg=document.getElementById("bgImg");
 const bgm=document.getElementById("bgm");
+const showStart=document.getElementById("showStart");
 
-bgVideo.src="https://drive.google.com/uc?export=download&id=1zC7cSlgmN12A7y2fuAfy2rhKXikPhDJT";
-
-let notes=[];
-let BPM=140;
-let beatInterval=60/BPM;
-let lastBeat=0;
-let lastTime=0;
 let gameRunning=false;
-
-let combo=0,maxCombo=0,totalNotes=0,hitNotes=0;
-let screenShake=0,flashAlpha=0;
+let notes=[];
+let lastTime=0,lastBeat=0,BPM=140,beatInterval=0.428;
+let combo=0,maxCombo=0,totalNotes=0,hitNotes=0,screenShake=0,flashAlpha=0;
 
 const columns=4;
 const columnWidth=canvas.width/columns;
+const columnKeys=["D","F","J","K"];
+const columnCodes=["KeyD","KeyF","KeyJ","KeyK"];
+
+// SONGS
+const songs={
+"BIRDBRAIN":{mp3:"BIRDBRAIN.mp3",BPM:140,speed:400,bgType:"video",bg:"https://drive.google.com/uc?export=download&id=1zC7cSlgmN12A7y2fuAfy2rhKXikPhDJT"},
+"Mesmerizer":{mp3:"mesmerizer.mp3",BPM:120,speed:500,bgType:"image",bg:"bg_mesmerizer.png"}
+};
+
+let currentSong=songs["BIRDBRAIN"];
+
+document.getElementById("songSelect").onchange=(e)=>{
+currentSong=songs[e.target.value];
+BPM=currentSong.BPM;
+beatInterval=60/BPM;
+bgm.src=currentSong.mp3;
+};
 
 document.getElementById("startBtn").onclick=()=>{
 document.getElementById("menu").style.opacity=0;
+document.getElementById("startSfx").play();
 setTimeout(()=>{
 document.getElementById("menu").style.display="none";
-document.getElementById("showStart").style.display="block";
-setTimeout(()=>{
-document.getElementById("showStart").style.display="none";
-startGame();
-},1000);
+showStart.style.display="block";
+setTimeout(()=>{showStart.style.display="none";startGame()},1000);
 },500);
 };
 
 function startGame(){
-bgVideo.style.opacity=1;
-bgm.play();
+notes=[];
+lastBeat=0;
+combo=0;maxCombo=0;totalNotes=0;hitNotes=0;
 gameRunning=true;
+
+// set BG
+if(currentSong.bgType==="video"){
+bgImg.style.opacity=0;
+bgVideo.src=currentSong.bg;
+bgVideo.style.opacity=1;
+bgVideo.play();
+}else{
+bgVideo.style.opacity=0;
+bgImg.src=currentSong.bg;
+bgImg.style.opacity=1;
+}
+bgm.currentTime=0;
+bgm.play();
 requestAnimationFrame(gameLoop);
+
+// create column bars
+for(let i=1;i<columns;i++){
+let bar=document.createElement("div");
+bar.className="columnBar";
+bar.style.left=(i*columnWidth)+"px";
+document.body.appendChild(bar);
 }
 
+// create key labels
+for(let i=0;i<columns;i++){
+let label=document.createElement("div");
+label.className="columnKey";
+label.style.left=(i*columnWidth+columnWidth/2)+"px";
+label.innerText=columnKeys[i];
+document.body.appendChild(label);
+}
+}
+
+// GENERATE NOTES
 function generateNotes(time){
 while(time-lastBeat>=beatInterval){
 let col=Math.floor(Math.random()*columns);
@@ -199,27 +247,28 @@ totalNotes++;
 }
 }
 
+// INPUT
+let keysPressed={};
 document.addEventListener("keydown",e=>{
+if(keysPressed[e.code])return;
+keysPressed[e.code]=true;
 for(let note of notes){
 if(note.hit)continue;
-if(note.y>canvas.height-120 && note.y<canvas.height-40){
+if(note.y>canvas.height-120 && note.y<canvas.height-40 && e.code===columnCodes[note.col]){
 note.hit=true;
-combo++;
-hitNotes++;
+combo++;hitNotes++;
 if(combo>maxCombo)maxCombo=combo;
-
 flashAlpha=0.5;
-
-let img=new Image();
-img.src="PERFECT.png";
+let img=new Image();img.src="PERFECT.png";
 ctx.drawImage(img,note.x,note.y,100,50);
 }
 }
 });
+document.addEventListener("keyup",e=>{keysPressed[e.code]=false;});
 
+// GAME LOOP
 function gameLoop(timestamp){
 if(!gameRunning)return;
-
 let delta=(timestamp-lastTime)/1000;
 lastTime=timestamp;
 
@@ -227,65 +276,54 @@ generateNotes(bgm.currentTime);
 
 ctx.clearRect(0,0,canvas.width,canvas.height);
 
-if(screenShake>0){
-ctx.save();
-ctx.translate((Math.random()-0.5)*screenShake,(Math.random()-0.5)*screenShake);
-screenShake*=0.9;
-}else ctx.save();
+// CAMERA SHAKE
+if(screenShake>0){ctx.save();ctx.translate((Math.random()-0.5)*screenShake,(Math.random()-0.5)*screenShake);screenShake*=0.9;}else ctx.save();
 
+// DRAW NOTES
 for(let note of notes){
 if(note.hit)continue;
-note.y+=400*delta;
+note.y+=currentSong.speed*delta;
 ctx.fillStyle="red";
 ctx.fillRect(note.x,note.y,columnWidth-40,50);
 
+// MISS
 if(note.y>canvas.height-70){
 note.hit=true;
-combo=0;
-screenShake=20;
-let img=new Image();
-img.src="MISS.png";
-ctx.drawImage(img,note.x,canvas.height-70,100,50);
+combo=0;screenShake=15;
+let img=new Image();img.src="MISS.png";ctx.drawImage(img,note.x,canvas.height-70,100,50);
 }
 }
 
 ctx.restore();
 
-const beatProgress=(bgm.currentTime%beatInterval)/beatInterval;
-overlay.style.background="rgba(0,0,0,"+(0.45+0.1*Math.sin(beatProgress*Math.PI))+")";
-
-bgVideo.style.transform="translate(-50%,-50%) scale("+(1+combo/300)+")";
-
+// FLASH
 if(flashAlpha>0){
 ctx.fillStyle="rgba(255,255,255,"+flashAlpha+")";
 ctx.fillRect(0,0,canvas.width,canvas.height);
 flashAlpha-=0.03;
 }
 
-if(bgm.ended){
-endGame();
-return;
-}
+// VIDEO ZOOM
+bgVideo.style.transform="translate(-50%,-50%) scale("+(1+combo/300)+")";
 
+if(bgm.ended){endGame();return;}
 requestAnimationFrame(gameLoop);
 }
 
+// END GAME RESULTS
 function endGame(){
 gameRunning=false;
 document.getElementById("results").style.display="flex";
-
 let acc=(hitNotes/totalNotes)*100;
 let rank="D";
 if(acc>95)rank="S";
 else if(acc>85)rank="A";
 else if(acc>70)rank="B";
 else if(acc>50)rank="C";
-
 document.getElementById("finalRank").innerText=rank;
 document.getElementById("accText").innerText="Accuracy: "+acc.toFixed(1)+"%";
 document.getElementById("comboText").innerText="Max Combo: "+maxCombo;
 }
 </script>
-
 </body>
 </html>
