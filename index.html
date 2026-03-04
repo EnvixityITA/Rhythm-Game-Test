@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>lol lol lol</title>
+<title>Rhythm Game BPM</title>
 <style>
 body {margin:0;overflow:hidden;font-family:Arial;background:black;color:white;}
 #gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;}
@@ -26,6 +26,7 @@ body {margin:0;overflow:hidden;font-family:Arial;background:black;color:white;}
 #keySettings{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);padding:10px 15px;border-radius:8px;display:none;z-index:20;}
 #keySettings td{border:1px solid rgba(255,255,255,0.3);padding:8px 15px;text-align:center;cursor:pointer;color:white;font-weight:bold;}
 #keySettings td:hover{background:rgba(255,255,255,0.2);}
+#bgImg {position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0;transition:opacity 1s;}
 </style>
 </head>
 <body>
@@ -54,6 +55,7 @@ body {margin:0;overflow:hidden;font-family:Arial;background:black;color:white;}
 </div>
 
 <img id="showStart" src="SHOW_START.png">
+<img id="bgImg">
 
 <canvas id="gameCanvas"></canvas>
 
@@ -75,6 +77,7 @@ canvas.width=window.innerWidth; canvas.height=window.innerHeight;
 const bgm=document.getElementById("bgm");
 const startSfx=document.getElementById("startSfx");
 const showStart=document.getElementById("showStart");
+const bgImg=document.getElementById("bgImg");
 
 const songSelector=document.getElementById("songSelector");
 const difficultyBadge=document.getElementById("difficultyBadge");
@@ -99,8 +102,8 @@ let notes=[], particles=[], hitRatings=[], gameRunning=false;
 let score=0, combo=0, totalHits=0, totalPerfect=0;
 
 const songs={
-"BIRDBRAIN":{mp3:"BIRDBRAIN.mp3", BPM:140, difficulty:"MEDIO", color:"yellow", speed:400},
-"Mesmerizer":{mp3:"mesmerizer.mp3", BPM:120, difficulty:"DIFFICILE", color:"red", speed:500}
+"BIRDBRAIN":{mp3:"BIRDBRAIN.mp3", BPM:140, difficulty:"MEDIO", color:"yellow", speed:400, bg:"bg_birdbrain.png"},
+"Mesmerizer":{mp3:"mesmerizer.mp3", BPM:120, difficulty:"DIFFICILE", color:"red", speed:500, bg:"bg_mesmerizer.png"}
 };
 let currentSong=songs[songSelector.value];
 
@@ -118,16 +121,23 @@ songSelector.addEventListener("change",()=>{
 });
 
 document.getElementById("startBtnIntro").addEventListener("click",()=>{
-    startSfx.currentTime=0; startSfx.play();
-    showStart.style.display="block";
+    // Dissolvenza intro prima di SHOW_START
+    introScreen.style.transition="opacity 0.5s";
+    introScreen.style.opacity=0;
     setTimeout(()=>{
-        showStart.style.display="none";
-        startGame();
-    },1000);
+        introScreen.style.display="none";
+        startSfx.currentTime=0; startSfx.play();
+        showStart.style.display="block";
+        bgImg.src=currentSong.bg;
+        bgImg.style.opacity=1;
+        setTimeout(()=>{
+            showStart.style.display="none";
+            startGame();
+        },1000);
+    },500);
 });
 
 function startGame(){
-    introScreen.style.display="none";
     notes=[]; particles=[]; hitRatings=[];
     score=0; combo=0; totalHits=0; totalPerfect=0;
     noteSpeed=currentSong.speed;
@@ -222,7 +232,12 @@ function gameLoop(timestamp){
         note.y += noteSpeed*deltaTime;
         ctx.fillStyle="red";
         ctx.fillRect(note.column*columnWidth+10,note.y,columnWidth-20,50);
-        if(note.y>canvas.height) {note.hit=true; combo=0;}
+        // Se supera hit line
+        if(note.y>canvas.height-70){ 
+            note.hit=true; combo=0;
+            hitRatings.push({img:new Image(),x:note.column*columnWidth+columnWidth/2,y:canvas.height-70,rating:"MISS",alpha:1});
+            hitRatings[hitRatings.length-1].img.src="MISS.png";
+        }
     }
 
     // ratings PNG
