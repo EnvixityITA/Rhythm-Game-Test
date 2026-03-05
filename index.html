@@ -8,17 +8,17 @@
 body{margin:0;overflow:hidden;background:black;font-family:Arial;color:white;}
 #bgImg{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0;transition:opacity 1s;filter:blur(6px) brightness(0.45);}
 #gameCanvas{position:absolute;width:100%;height:100%;z-index:1;}
-#introScreen{position:absolute;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;background:black;z-index:10;opacity:1;transition:opacity 0.5s, transform 0.5s;}
+#introScreen{position:absolute;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;background:black;z-index:10;opacity:1;transition:opacity 0.5s;}
 #logo{width:350px;margin-bottom:20px;filter:drop-shadow(0 0 20px white);}
 #songTitle{font-size:32px;margin-bottom:5px;}
 #difficulty{margin-bottom:20px;font-size:20px;}
-#songSelector{margin-bottom:15px;padding:8px 12px;font-size:18px;}
-#startBtn{padding:10px 20px;font-size:18px;cursor:pointer;background: rgba(255,255,255,0.1);color:white;border:2px solid white;border-radius:6px;margin-bottom:10px;}
-#settingsBtn{padding:8px 15px;font-size:16px;cursor:pointer;background: rgba(255,255,255,0.1);color:white;border:2px solid white;border-radius:6px;}
+#startBtn,#settingsBtn{padding:10px 20px;font-size:18px;cursor:pointer;background: rgba(255,255,255,0.1);color:white;border:2px solid white;border-radius:6px;margin:5px;}
 #score,#combo,#rank{position:absolute;top:10px;font-size:22px;z-index:5;}
 #score{left:10px;} #combo{left:200px;} #rank{left:360px;}
 .columnLabel{position:absolute;font-size:20px;text-align:center;transform:translateX(-50%);color:white;}
-#keySettings{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);padding:10px 15px;border-radius:8px;display:none;z-index:20;}
+#settingsPanel{position:absolute;top:50px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);padding:15px;border-radius:8px;display:none;z-index:20;min-width:300px;}
+#settingsTabs button{margin-right:10px;padding:5px 10px;cursor:pointer;}
+#tabContent{margin-top:10px;}
 #keySettings td{border:1px solid rgba(255,255,255,0.3);padding:8px 15px;text-align:center;cursor:pointer;color:white;font-weight:bold;}
 #keySettings td:hover{background:rgba(255,255,255,0.2);}
 </style>
@@ -36,18 +36,33 @@ body{margin:0;overflow:hidden;background:black;font-family:Arial;color:white;}
 <option value="ECHO">ECHO</option>
 </select>
 <button id="startBtn">START</button>
-<button id="settingsBtn">IMPOSTAZIONI TASTI</button>
+<button id="settingsBtn">IMPOSTAZIONI</button>
 </div>
 
-<div id="keySettings">
-<table><tr>
+<div id="settingsPanel">
+<div id="settingsTabs">
+<button id="tabKeysBtn">Tasti e Volume</button>
+<button id="tabSongsBtn">Selezione Canzoni</button>
+</div>
+<div id="tabContent">
+<div id="tabKeys">
+<table id="keySettings"><tr>
 <td id="col0">D</td>
 <td id="col1">F</td>
 <td id="col2">J</td>
 <td id="col3">K</td>
 <td id="col4">Space</td>
 </tr></table>
-<small>Clicca su un tasto per cambiarlo</small>
+<div style="margin-top:10px;">Volume: <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5"></div>
+</div>
+<div id="tabSongs" style="display:none;">
+<select id="songSelector2">
+<option value="BIRDBRAIN">BIRDBRAIN</option>
+<option value="Mesmerizer">MESMERIZER</option>
+<option value="ECHO">ECHO</option>
+</select>
+</div>
+</div>
 </div>
 
 <canvas id="gameCanvas"></canvas>
@@ -55,6 +70,7 @@ body{margin:0;overflow:hidden;background:black;font-family:Arial;color:white;}
 <div id="combo">Combo: 0x</div>
 <div id="rank">Rank: F</div>
 <audio id="bgm"></audio>
+<audio id="bgmMenu" loop></audio>
 
 <script>
 const canvas=document.getElementById("gameCanvas");
@@ -72,16 +88,27 @@ let columnCodes=["KeyD","KeyF","KeyJ","KeyK","Space"];
 let columnColors=[];
 
 const bgm=document.getElementById("bgm");
+const bgmMenu=document.getElementById("bgmMenu");
+bgmMenu.src="menu_bgm.mp3"; // canzone menu
+bgmMenu.volume=0.5;
+bgmMenu.play();
+
 const bgImg=document.getElementById("bgImg");
 const scoreDisplay=document.getElementById("score");
 const comboDisplay=document.getElementById("combo");
 const rankDisplay=document.getElementById("rank");
 const selector=document.getElementById("songSelector");
+const selector2=document.getElementById("songSelector2");
 const introScreen=document.getElementById("introScreen");
 const logo=document.getElementById("logo");
 const startBtn=document.getElementById("startBtn");
 const settingsBtn=document.getElementById("settingsBtn");
-const keySettings=document.getElementById("keySettings");
+const settingsPanel=document.getElementById("settingsPanel");
+
+const tabKeysBtn=document.getElementById("tabKeysBtn");
+const tabSongsBtn=document.getElementById("tabSongsBtn");
+const tabKeys=document.getElementById("tabKeys");
+const tabSongs=document.getElementById("tabSongs");
 
 const hitLineHeight=25;
 
@@ -96,25 +123,22 @@ let notes=[],chart=[],noteIndex=0,hitRatings=[];
 let score=0,combo=0,totalHits=0,totalPerfect=0,noteSpeed=400,gameRunning=false,lastTime=0;
 
 function updateColumns(){
-    if(selector.value==="ECHO"){
+    if(currentSong===songs["ECHO"]){
         columns = 5;
-        arrowZoneWidth = canvas.width*0.6;
-        columnWidth = arrowZoneWidth/columns;
-        arrowZoneOffset = (canvas.width-arrowZoneWidth)/2;
     } else {
         columns = 4;
-        arrowZoneWidth = canvas.width*0.6;
-        columnWidth = arrowZoneWidth/columns;
-        arrowZoneOffset = (canvas.width-arrowZoneWidth)/2;
     }
+    arrowZoneWidth = canvas.width*0.6;
+    columnWidth = arrowZoneWidth/columns;
+    arrowZoneOffset = (canvas.width-arrowZoneWidth)/2;
 }
 
 function updateNoteColors(){
-    if(selector.value==="BIRDBRAIN"){
+    if(currentSong===songs["BIRDBRAIN"]){
         columnColors = ["#ff0000","#ff8000","#ff40bf","#ffff00"];
-    } else if(selector.value==="Mesmerizer"){
+    } else if(currentSong===songs["Mesmerizer"]){
         columnColors = ["#00ffff","#00bfff","#0080ff","#0040ff"];
-    } else if(selector.value==="ECHO"){
+    } else if(currentSong===songs["ECHO"]){
         columnColors = ["#00ff00","#40ff00","#80ff00","#bfff00","#ff00ff"];
     }
 }
@@ -126,13 +150,19 @@ function updateSongUI(){
     updateColumns();
 }
 
-selector.onchange=()=>{
-    currentSong=songs[selector.value];
-    updateSongUI();
-}
+// Gestione tab impostazioni
+settingsBtn.onclick=()=>{settingsPanel.style.display = settingsPanel.style.display==="none"?"block":"none";}
+tabKeysBtn.onclick=()=>{tabKeys.style.display="block"; tabSongs.style.display="none";}
+tabSongsBtn.onclick=()=>{tabKeys.style.display="none"; tabSongs.style.display="block";}
 
-updateSongUI();
+// Gestione volume
+document.getElementById("volumeSlider").oninput=function(){bgm.volume=this.value;};
 
+// Sincronizza selector2 con selector principale
+selector.onchange=function(){currentSong=songs[selector.value]; selector2.value=selector.value; updateSongUI();}
+selector2.onchange=function(){currentSong=songs[selector2.value]; selector.value=selector2.value; updateSongUI();}
+
+// Chart generatore
 function generateFullChart(){
     chart=[];
     const BPM=currentSong.BPM;
@@ -140,7 +170,7 @@ function generateFullChart(){
     const duration=bgm.duration||120;
     for(let t=beat; t<duration; t+=beat){
         let col;
-        if(selector.value==="ECHO"){
+        if(currentSong===songs["ECHO"]){
             col=Math.floor(Math.random()*5); 
             chart.push({time:t,column:col});
             if(Math.random()<0.35){ 
@@ -154,18 +184,16 @@ function generateFullChart(){
     }
 }
 
+// Start game
 startBtn.onclick=()=>{
     introScreen.style.opacity=0;
     setTimeout(()=>{
         introScreen.style.display="none"; 
         bgImg.src=currentSong.bg; 
         bgImg.style.opacity=1; 
+        bgmMenu.pause();
         startGame();
     },500);
-}
-
-settingsBtn.onclick=()=>{
-    keySettings.style.display = keySettings.style.display==="none"?"block":"none";
 }
 
 function startGame(){
@@ -173,6 +201,7 @@ function startGame(){
     score=0; combo=0; totalHits=0; totalPerfect=0;
     noteSpeed=currentSong.speed;
     bgm.src=currentSong.mp3; bgm.currentTime=0;
+    bgm.volume=document.getElementById("volumeSlider").value;
     bgm.onloadedmetadata=()=>{
         generateFullChart();
         gameRunning=true;
@@ -203,6 +232,7 @@ function spawnNotes(time){
     }
 }
 
+// Disegna colonne
 function drawColumns(){
     for(let i=0;i<=columns;i++){
         ctx.strokeStyle="rgba(255,255,255,0.2)";
@@ -214,6 +244,7 @@ function drawColumns(){
     }
 }
 
+// Mostra tasti sotto colonne
 function drawKeyLabels(){
     for(let i=0;i<columns;i++){
         let label=document.getElementById("label"+i);
@@ -223,40 +254,28 @@ function drawKeyLabels(){
             label.className="columnLabel";
             document.body.appendChild(label);
         }
-        if(selector.value==="ECHO" && i===2){
-            label.innerText = columnKeys[4]; // Space
-        } else {
-            let keyIndex = (i<2)? i : i-1; // shift dopo colonna centrale
-            label.innerText = columnKeys[keyIndex];
-        }
-        label.style.left = (arrowZoneOffset + i*columnWidth + columnWidth/2) + "px";
-        label.style.bottom = "30px";
+        if(currentSong===songs["ECHO"] && i===2){label.innerText=columnKeys[4];} 
+        else{let keyIndex=(i<2)?i:i-1; label.innerText=columnKeys[keyIndex];}
+        label.style.left=(arrowZoneOffset + i*columnWidth + columnWidth/2)+"px";
+        label.style.bottom="30px";
     }
 }
 
+// Input tastiera
 document.addEventListener("keydown",e=>{
     if(!gameRunning)return;
     for(let note of notes){
         if(note.hit)continue;
-        let code = columnCodes[note.column];
+        let code=columnCodes[note.column];
         if(code==="Space") code="Space";
-        if(e.code===code && note.y>canvas.height-90-hitLineHeight && note.y<canvas.height-30){
+        if(e.code===code && note.y>canvas.height-120 && note.y<canvas.height-20){
             note.hit=true; combo++; totalHits++;
-            const dist=Math.abs(note.y-(canvas.height-70));
-            if(dist<5) totalPerfect++;
             score+=100*(1+combo*0.05);
-            let rating="MEH";
-            if(dist<5) rating="PERFECT";
-            else if(dist<10) rating="SICK";
-            else if(dist<20) rating="AWESOME";
-            else if(dist<35) rating="NICE";
-            const img=new Image();
-            img.src=rating+".png";
-            hitRatings.push({img:img,x:arrowZoneOffset+note.column*columnWidth+columnWidth/2,y:canvas.height-120,alpha:1});
         }
     }
 });
 
+// Loop di gioco
 function gameLoop(timestamp){
     if(!gameRunning)return;
     const delta=(timestamp-lastTime)/1000;
@@ -268,34 +287,20 @@ function gameLoop(timestamp){
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
     ctx.fillStyle="rgba(255,255,255,0.2)";
-    ctx.fillRect(arrowZoneOffset, canvas.height - 70 - hitLineHeight/2, arrowZoneWidth, hitLineHeight);
+    ctx.fillRect(arrowZoneOffset, canvas.height-70-hitLineHeight/2, arrowZoneWidth, hitLineHeight);
 
     drawColumns();
     drawKeyLabels();
 
     for(let note of notes){
         if(note.hit)continue;
-        ctx.fillStyle = columnColors[note.column];
+        ctx.fillStyle=columnColors[note.column];
         note.y+=noteSpeed*delta;
         ctx.fillRect(arrowZoneOffset+note.column*columnWidth+10,note.y,columnWidth-20,50);
         if(note.y>canvas.height-70){
-            note.hit=true;
-            combo=0;
-            totalHits++;
-            const img=new Image();
-            img.src="MISS.png";
-            hitRatings.push({img:img,x:arrowZoneOffset+note.column*columnWidth+columnWidth/2,y:canvas.height-70,alpha:1});
+            note.hit=true; combo=0; totalHits++;
         }
     }
-
-    for(let i=hitRatings.length-1;i>=0;i--){
-        const r=hitRatings[i];
-        ctx.globalAlpha=r.alpha;
-        ctx.drawImage(r.img,r.x-50,r.y-25,100,50);
-        r.y-=1; r.alpha-=0.02;
-        if(r.alpha<=0) hitRatings.splice(i,1);
-    }
-    ctx.globalAlpha=1;
 
     scoreDisplay.innerText="Punti: "+Math.floor(score);
     comboDisplay.innerText="Combo: "+combo+"x";
