@@ -220,6 +220,7 @@ function drawColumns(){
     ctx.lineWidth = 1;
 }
 
+// Mostra il tasto sotto ogni colonna, con Space al centro per ECHO
 function drawKeyLabels(){
     for(let i=0;i<columns;i++){
         let label=document.getElementById("label"+i);
@@ -227,11 +228,16 @@ function drawKeyLabels(){
             label=document.createElement("div");
             label.id="label"+i;
             label.className="columnLabel";
-            label.innerText=columnKeys[i];
             document.body.appendChild(label);
         }
-        label.style.left=(arrowZoneOffset + i*columnWidth + columnWidth/2)+"px";
-        label.style.bottom="30px";
+        if(selector.value==="ECHO" && i===2){
+            label.innerText = columnKeys[4]; // Space
+        } else {
+            let keyIndex = (i<2)? i : i-1; // shift dopo colonna centrale
+            label.innerText = columnKeys[keyIndex];
+        }
+        label.style.left = (arrowZoneOffset + i*columnWidth + columnWidth/2) + "px";
+        label.style.bottom = "30px";
     }
 }
 
@@ -276,10 +282,7 @@ function gameLoop(timestamp){
 
     for(let note of notes){
         if(note.hit)continue;
-        // evidenzia nota centrale in ECHO
-        ctx.fillStyle = (selector.value==="ECHO" && note.column===2) 
-                        ? "#ffff80" 
-                        : columnColors[note.column];
+        ctx.fillStyle = (selector.value==="ECHO" && note.column===2) ? "#ffff80" : columnColors[note.column];
         note.y+=noteSpeed*delta;
         ctx.fillRect(arrowZoneOffset+note.column*columnWidth+10,note.y,columnWidth-20,50);
         if(note.y>canvas.height-70){
