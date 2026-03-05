@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VOCALOID lol</title>
+<title>VOCALOID NOVA</title>
 <style>
 body{margin:0;overflow:hidden;background:black;font-family:Arial;color:white;}
 #bgImg{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0;transition:opacity 1s;filter:blur(6px) brightness(0.45);}
@@ -89,7 +89,7 @@ let columnColors=[];
 
 const bgm=document.getElementById("bgm");
 const bgmMenu=document.getElementById("bgmMenu");
-bgmMenu.src="menu_bgm.mp3"; // canzone menu
+bgmMenu.src="menu_bgm.mp3"; 
 bgmMenu.volume=0.5;
 bgmMenu.play();
 
@@ -178,7 +178,7 @@ function generateFullChart(){
                 chart.push({time:t+beat*0.2,column:extraCol});
             }
         } else {
-            col=Math.floor(columns*Math.random());
+            col=Math.floor(4*Math.random());
             chart.push({time:t,column:col});
         }
     }
@@ -254,8 +254,14 @@ function drawKeyLabels(){
             label.className="columnLabel";
             document.body.appendChild(label);
         }
-        if(currentSong===songs["ECHO"] && i===2){label.innerText=columnKeys[4];} 
-        else{let keyIndex=(i<2)?i:i-1; label.innerText=columnKeys[keyIndex];}
+        // logica corretta per ECHO
+        if(currentSong===songs["ECHO"]){
+            let labelsMap=["D","F","Space","J","K"];
+            label.innerText = labelsMap[i];
+        } else {
+            let labelsMap=["D","F","J","K"];
+            label.innerText = labelsMap[i];
+        }
         label.style.left=(arrowZoneOffset + i*columnWidth + columnWidth/2)+"px";
         label.style.bottom="30px";
     }
@@ -270,7 +276,17 @@ document.addEventListener("keydown",e=>{
         if(code==="Space") code="Space";
         if(e.code===code && note.y>canvas.height-120 && note.y<canvas.height-20){
             note.hit=true; combo++; totalHits++;
+            const dist=Math.abs(note.y-(canvas.height-70));
+            if(dist<5) totalPerfect++;
             score+=100*(1+combo*0.05);
+            let rating="MEH";
+            if(dist<5) rating="PERFECT";
+            else if(dist<10) rating="SICK";
+            else if(dist<20) rating="AWESOME";
+            else if(dist<35) rating="NICE";
+            const img=new Image();
+            img.src=rating+".png";
+            hitRatings.push({img:img,x:arrowZoneOffset+note.column*columnWidth+columnWidth/2,y:canvas.height-120,alpha:1});
         }
     }
 });
@@ -299,8 +315,20 @@ function gameLoop(timestamp){
         ctx.fillRect(arrowZoneOffset+note.column*columnWidth+10,note.y,columnWidth-20,50);
         if(note.y>canvas.height-70){
             note.hit=true; combo=0; totalHits++;
+            const img=new Image();
+            img.src="MISS.png";
+            hitRatings.push({img:img,x:arrowZoneOffset+note.column*columnWidth+columnWidth/2,y:canvas.height-70,alpha:1});
         }
     }
+
+    for(let i=hitRatings.length-1;i>=0;i--){
+        const r=hitRatings[i];
+        ctx.globalAlpha=r.alpha;
+        ctx.drawImage(r.img,r.x-50,r.y-25,100,50);
+        r.y-=1; r.alpha-=0.02;
+        if(r.alpha<=0) hitRatings.splice(i,1);
+    }
+    ctx.globalAlpha=1;
 
     scoreDisplay.innerText="Punti: "+Math.floor(score);
     comboDisplay.innerText="Combo: "+combo+"x";
