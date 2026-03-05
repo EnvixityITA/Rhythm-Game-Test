@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VOCALOID lol</title>
+<title>VOCALOID NOVA</title>
 <style>
 body{margin:0;overflow:hidden;background:black;font-family:Arial;color:white;}
 #bgImg{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0;transition:opacity 1s;filter:blur(6px) brightness(0.45);}
@@ -49,9 +49,9 @@ body{margin:0;overflow:hidden;background:black;font-family:Arial;color:white;}
 <table id="keySettings"><tr>
 <td id="col0">D</td>
 <td id="col1">F</td>
-<td id="col2">J</td>
-<td id="col3">K</td>
-<td id="col4">Space</td>
+<td id="col2">H</td>
+<td id="col3">J</td>
+<td id="col4">K</td>
 </tr></table>
 <div style="margin-top:10px;">Volume: <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5"></div>
 </div>
@@ -83,8 +83,8 @@ let columns = 4;
 let columnWidth = arrowZoneWidth/columns;
 let arrowZoneOffset = (canvas.width-arrowZoneWidth)/2;
 
-let columnKeys=["D","F","J","K"," "];
-let columnCodes=["KeyD","KeyF","KeyJ","KeyK","Space"];
+let columnKeys=["D","F","H","J","K"];  // H centrale
+let columnCodes=["KeyD","KeyF","KeyH","KeyJ","KeyK"];
 let columnColors=[];
 
 const bgm=document.getElementById("bgm");
@@ -211,15 +211,15 @@ function startGame(){
     }
 }
 
-// Key settings (fix tasto Space centrale)
+// Key settings (fix tasto centrale H)
 for(let i=0;i<5;i++){
     document.getElementById("col"+i).addEventListener("click",()=>{
-        let currentKey = columnKeys[i] || (i===2 && currentSong===songs["ECHO"] ? " " : "");
+        let currentKey = columnKeys[i];
         const newKey=prompt("Inserisci nuovo tasto per colonna "+(i+1), currentKey);
         if(newKey){ 
             columnKeys[i]=newKey.toUpperCase(); 
-            columnCodes[i]= newKey===" " ? "Space" : "Key"+newKey.toUpperCase(); 
-            document.getElementById("col"+i).innerText = (newKey===" " ? "Space" : newKey.toUpperCase()); 
+            columnCodes[i]= "Key"+newKey.toUpperCase(); 
+            document.getElementById("col"+i).innerText = newKey.toUpperCase(); 
         }
     });
 }
@@ -256,7 +256,7 @@ function drawKeyLabels(){
             document.body.appendChild(label);
         }
         if(currentSong===songs["ECHO"]){
-            let labelsMap=["D","F","Space","J","K"];
+            let labelsMap=["D","F","H","J","K"];  // H centrale
             label.innerText = labelsMap[i];
         } else {
             let labelsMap=["D","F","J","K"];
@@ -273,8 +273,7 @@ document.addEventListener("keydown",e=>{
     for(let note of notes){
         if(note.hit)continue;
         let code=columnCodes[note.column];
-        if(code==="Space") code="Space";
-        if(e.code===code && note.y>canvas.height-120 && note.y<canvas.height-20){
+        if(e.code===code){
             note.hit=true; combo++; totalHits++;
             const dist=Math.abs(note.y-(canvas.height-70));
             if(dist<5) totalPerfect++;
