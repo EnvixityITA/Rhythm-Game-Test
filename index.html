@@ -93,197 +93,208 @@ let notes=[],chart=[],noteIndex=0,hitRatings=[];
 let score=0,combo=0,totalHits=0,totalPerfect=0,noteSpeed=400,gameRunning=false,lastTime=0;
 
 function updateColumns(){
-columns = (selector.value==="ECHO")?5:((selector.value==="Mesmerizer")?4:4);
-arrowZoneWidth = canvas.width*0.6;
-columnWidth = arrowZoneWidth/columns;
-arrowZoneOffset = (canvas.width-arrowZoneWidth)/2;
+    if(selector.value==="ECHO"){
+        columns = 5;
+        arrowZoneWidth = canvas.width*0.6;
+        columnWidth = arrowZoneWidth/columns;
+        arrowZoneOffset = (canvas.width-arrowZoneWidth)/2;
+    } else {
+        columns = 4;
+        arrowZoneWidth = canvas.width*0.6;
+        columnWidth = arrowZoneWidth/columns;
+        arrowZoneOffset = (canvas.width-arrowZoneWidth)/2;
+    }
 }
 
 function updateNoteColors(){
-const t=bgm.currentTime;
-if(selector.value==="BIRDBRAIN"){
-columnColors = ["#ff0000","#ff8000","#ff40bf","#ffff00"];
-} else if(selector.value==="Mesmerizer"){
-if(t<bgm.duration/2){
-columnColors = ["#00ffff","#00bfff","#0080ff","#0040ff"];
-} else {
-columnColors = ["#ff0000","#ff8000","#ff40bf","#ffff00"];
-}
-} else if(selector.value==="ECHO"){
-columnColors = ["#00ff00","#40ff00","#80ff00","#bfff00","#ff00ff"];
-}
+    const t=bgm.currentTime;
+    if(selector.value==="BIRDBRAIN"){
+        columnColors = ["#ff0000","#ff8000","#ff40bf","#ffff00"];
+    } else if(selector.value==="Mesmerizer"){
+        if(t<bgm.duration/2){
+            columnColors = ["#00ffff","#00bfff","#0080ff","#0040ff"];
+        } else {
+            columnColors = ["#ff0000","#ff8000","#ff40bf","#ffff00"];
+        }
+    } else if(selector.value==="ECHO"){
+        columnColors = ["#00ff00","#40ff00","#80ff00","#bfff00","#ff00ff"];
+    }
 }
 
 function updateSongUI(){
-document.getElementById("songTitle").innerText=selector.value;
-document.getElementById("difficulty").innerText=currentSong.difficulty.toUpperCase();
-document.getElementById("difficulty").style.color=currentSong.color;
-updateColumns();
+    document.getElementById("songTitle").innerText=selector.value;
+    document.getElementById("difficulty").innerText=currentSong.difficulty.toUpperCase();
+    document.getElementById("difficulty").style.color=currentSong.color;
+    updateColumns();
 }
 
 selector.onchange=()=>{
-currentSong=songs[selector.value];
-updateSongUI();
+    currentSong=songs[selector.value];
+    updateSongUI();
 }
 
 updateSongUI();
 
-// Genera chart con più note per ECHO
 function generateFullChart(){
-chart=[];
-const BPM=currentSong.BPM;
-const beat=60/currentSong.BPM;
-const duration=bgm.duration||120;
-for(let t=beat;t<duration;t+=beat){
-let col;
-if(selector.value==="ECHO"){
-col=Math.floor(Math.random()*5); // tutte 5 le colonne
-} else {
-col=Math.floor(columns*Math.random());
-}
-chart.push({time:t,column:col});
-if(selector.value==="ECHO" && Math.random()<0.25){ // aggiungi qualche nota extra casuale
-let extraCol=Math.floor(Math.random()*5);
-chart.push({time:t+beat*0.3,column:extraCol});
-}
-}
+    chart=[];
+    const BPM=currentSong.BPM;
+    const beat=60/currentSong.BPM;
+    const duration=bgm.duration||120;
+    for(let t=beat; t<duration; t+=beat){
+        let col;
+        if(selector.value==="ECHO"){
+            col=Math.floor(Math.random()*5); 
+            chart.push({time:t,column:col});
+            if(Math.random()<0.35){ 
+                let extraCol=Math.floor(Math.random()*5);
+                chart.push({time:t+beat*0.2,column:extraCol});
+            }
+        } else {
+            col=Math.floor(columns*Math.random());
+            chart.push({time:t,column:col});
+        }
+    }
 }
 
 // Start game
 startBtn.onclick=()=>{
-introScreen.style.opacity=0;
-setTimeout(()=>{
-introScreen.style.display="none"; 
-bgImg.src=currentSong.bg; 
-bgImg.style.opacity=1; 
-startGame();
-},500);
+    introScreen.style.opacity=0;
+    setTimeout(()=>{
+        introScreen.style.display="none"; 
+        bgImg.src=currentSong.bg; 
+        bgImg.style.opacity=1; 
+        startGame();
+    },500);
 }
 
 function startGame(){
-notes=[]; chart=[]; noteIndex=0;
-score=0; combo=0; totalHits=0; totalPerfect=0;
-noteSpeed=currentSong.speed;
-bgm.src=currentSong.mp3; bgm.currentTime=0;
-bgm.onloadedmetadata=()=>{
-generateFullChart();
-gameRunning=true;
-lastTime=0;
-requestAnimationFrame(gameLoop);
-bgm.play();
-}
+    notes=[]; chart=[]; noteIndex=0;
+    score=0; combo=0; totalHits=0; totalPerfect=0;
+    noteSpeed=currentSong.speed;
+    bgm.src=currentSong.mp3; bgm.currentTime=0;
+    bgm.onloadedmetadata=()=>{
+        generateFullChart();
+        gameRunning=true;
+        lastTime=0;
+        requestAnimationFrame(gameLoop);
+        bgm.play();
+    }
 }
 
 // Key settings
 for(let i=0;i<5;i++){
-document.getElementById("col"+i).addEventListener("click",()=>{
-const newKey=prompt("Inserisci nuovo tasto per colonna "+(i+1), columnKeys[i]||"Space");
-if(newKey){ columnKeys[i]=newKey.toUpperCase(); columnCodes[i]= newKey===" "?"Space":"Key"+newKey.toUpperCase(); document.getElementById("col"+i).innerText=columnKeys[i]; }
-});
+    document.getElementById("col"+i).addEventListener("click",()=>{
+        const newKey=prompt("Inserisci nuovo tasto per colonna "+(i+1), columnKeys[i]||"Space");
+        if(newKey){ 
+            columnKeys[i]=newKey.toUpperCase(); 
+            columnCodes[i]= newKey===" "?"Space":"Key"+newKey.toUpperCase(); 
+            document.getElementById("col"+i).innerText=columnKeys[i]; 
+        }
+    });
 }
 
 function spawnNotes(time){
-while(noteIndex<chart.length && chart[noteIndex].time <= time + 0.1){ 
-if(chart[noteIndex].time>0){
-notes.push({y:-50,column:chart[noteIndex].column,hit:false});
-}
-noteIndex++;
-}
+    while(noteIndex<chart.length && chart[noteIndex].time <= time + 0.1){ 
+        if(chart[noteIndex].time>0){
+            notes.push({y:-50,column:chart[noteIndex].column,hit:false});
+        }
+        noteIndex++;
+    }
 }
 
 function drawColumns(){
-for(let i=0;i<=columns;i++){
-ctx.strokeStyle="rgba(255,255,255,0.2)";
-ctx.beginPath();
-ctx.moveTo(arrowZoneOffset + i*columnWidth,0);
-ctx.lineTo(arrowZoneOffset + i*columnWidth,canvas.height);
-ctx.stroke();
-}
+    for(let i=0;i<=columns;i++){
+        ctx.strokeStyle="rgba(255,255,255,0.2)";
+        ctx.beginPath();
+        ctx.moveTo(arrowZoneOffset + i*columnWidth,0);
+        ctx.lineTo(arrowZoneOffset + i*columnWidth,canvas.height);
+        ctx.stroke();
+    }
 }
 
 function drawKeyLabels(){
-for(let i=0;i<columns;i++){
-let label=document.getElementById("label"+i);
-if(!label){
-label=document.createElement("div");
-label.id="label"+i;
-label.className="columnLabel";
-label.innerText=columnKeys[i];
-document.body.appendChild(label);
-}
-label.style.left=(arrowZoneOffset + i*columnWidth + columnWidth/2)+"px";
-label.style.bottom="30px";
-}
+    for(let i=0;i<columns;i++){
+        let label=document.getElementById("label"+i);
+        if(!label){
+            label=document.createElement("div");
+            label.id="label"+i;
+            label.className="columnLabel";
+            label.innerText=columnKeys[i];
+            document.body.appendChild(label);
+        }
+        label.style.left=(arrowZoneOffset + i*columnWidth + columnWidth/2)+"px";
+        label.style.bottom="30px";
+    }
 }
 
 document.addEventListener("keydown",e=>{
-if(!gameRunning)return;
-for(let note of notes){
-if(note.hit)continue;
-let code = columnCodes[note.column];
-if(code==="Space") code="Space";
-if(e.code===code && note.y>canvas.height-70-hitLineHeight && note.y<canvas.height-40){
-note.hit=true; combo++; totalHits++;
-const dist=Math.abs(note.y-(canvas.height-70));
-if(dist<5) totalPerfect++;
-score+=100*(1+combo*0.05);
-let rating="MEH";
-if(dist<5) rating="PERFECT";
-else if(dist<10) rating="SICK";
-else if(dist<20) rating="AWESOME";
-else if(dist<35) rating="NICE";
-const img=new Image();
-img.src=rating+".png";
-hitRatings.push({img:img,x:arrowZoneOffset+note.column*columnWidth+columnWidth/2,y:canvas.height-120,alpha:1});
-}
-}
+    if(!gameRunning)return;
+    for(let note of notes){
+        if(note.hit)continue;
+        let code = columnCodes[note.column];
+        if(code==="Space") code="Space";
+        // Finestra più ampia per colpire note
+        if(e.code===code && note.y>canvas.height-90-hitLineHeight && note.y<canvas.height-30){
+            note.hit=true; combo++; totalHits++;
+            const dist=Math.abs(note.y-(canvas.height-70));
+            if(dist<5) totalPerfect++;
+            score+=100*(1+combo*0.05);
+            let rating="MEH";
+            if(dist<5) rating="PERFECT";
+            else if(dist<10) rating="SICK";
+            else if(dist<20) rating="AWESOME";
+            else if(dist<35) rating="NICE";
+            const img=new Image();
+            img.src=rating+".png";
+            hitRatings.push({img:img,x:arrowZoneOffset+note.column*columnWidth+columnWidth/2,y:canvas.height-120,alpha:1});
+        }
+    }
 });
 
 function gameLoop(timestamp){
-if(!gameRunning)return;
-const delta=(timestamp-lastTime)/1000;
-lastTime=timestamp;
+    if(!gameRunning)return;
+    const delta=(timestamp-lastTime)/1000;
+    lastTime=timestamp;
 
-updateNoteColors();
-spawnNotes(bgm.currentTime);
+    updateNoteColors();
+    spawnNotes(bgm.currentTime);
 
-ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 
-// Hit line rettangolo semitrasparente
-ctx.fillStyle="rgba(255,255,255,0.2)";
-ctx.fillRect(arrowZoneOffset, canvas.height - 70 - hitLineHeight/2, arrowZoneWidth, hitLineHeight);
+    ctx.fillStyle="rgba(255,255,255,0.2)";
+    ctx.fillRect(arrowZoneOffset, canvas.height - 70 - hitLineHeight/2, arrowZoneWidth, hitLineHeight);
 
-drawColumns();
-drawKeyLabels();
+    drawColumns();
+    drawKeyLabels();
 
-for(let note of notes){
-if(note.hit)continue;
-note.y+=noteSpeed*delta;
-ctx.fillStyle=columnColors[note.column];
-ctx.fillRect(arrowZoneOffset+note.column*columnWidth+10,note.y,columnWidth-20,50);
-if(note.y>canvas.height-70){
-note.hit=true;
-combo=0;
-totalHits++;
-const img=new Image();
-img.src="MISS.png";
-hitRatings.push({img:img,x:arrowZoneOffset+note.column*columnWidth+columnWidth/2,y:canvas.height-70,alpha:1});
-}
-}
+    for(let note of notes){
+        if(note.hit)continue;
+        note.y+=noteSpeed*delta;
+        ctx.fillStyle=columnColors[note.column];
+        ctx.fillRect(arrowZoneOffset+note.column*columnWidth+10,note.y,columnWidth-20,50);
+        if(note.y>canvas.height-70){
+            note.hit=true;
+            combo=0;
+            totalHits++;
+            const img=new Image();
+            img.src="MISS.png";
+            hitRatings.push({img:img,x:arrowZoneOffset+note.column*columnWidth+columnWidth/2,y:canvas.height-70,alpha:1});
+        }
+    }
 
-for(let i=hitRatings.length-1;i>=0;i--){
-const r=hitRatings[i];
-ctx.globalAlpha=r.alpha;
-ctx.drawImage(r.img,r.x-50,r.y-25,100,50);
-r.y-=1; r.alpha-=0.02;
-if(r.alpha<=0) hitRatings.splice(i,1);
-}
-ctx.globalAlpha=1;
+    for(let i=hitRatings.length-1;i>=0;i--){
+        const r=hitRatings[i];
+        ctx.globalAlpha=r.alpha;
+        ctx.drawImage(r.img,r.x-50,r.y-25,100,50);
+        r.y-=1; r.alpha-=0.02;
+        if(r.alpha<=0) hitRatings.splice(i,1);
+    }
+    ctx.globalAlpha=1;
 
-scoreDisplay.innerText="Punti: "+Math.floor(score);
-comboDisplay.innerText="Combo: "+combo+"x";
+    scoreDisplay.innerText="Punti: "+Math.floor(score);
+    comboDisplay.innerText="Combo: "+combo+"x";
 
-requestAnimationFrame(gameLoop);
+    requestAnimationFrame(gameLoop);
 }
 </script>
 </body>
