@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VOCALOID NOVA</title>
+<title>VOCALOID lol</title>
 <style>
 body{margin:0;overflow:hidden;background:black;font-family:Arial;color:white;}
 #bgImg{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0;transition:opacity 1s;filter:blur(6px) brightness(0.45);}
@@ -211,14 +211,15 @@ function startGame(){
     }
 }
 
-// Key settings
+// Key settings (fix tasto Space centrale)
 for(let i=0;i<5;i++){
     document.getElementById("col"+i).addEventListener("click",()=>{
-        const newKey=prompt("Inserisci nuovo tasto per colonna "+(i+1), columnKeys[i]||"Space");
+        let currentKey = columnKeys[i] || (i===2 && currentSong===songs["ECHO"] ? " " : "");
+        const newKey=prompt("Inserisci nuovo tasto per colonna "+(i+1), currentKey);
         if(newKey){ 
             columnKeys[i]=newKey.toUpperCase(); 
-            columnCodes[i]= newKey===" "?"Space":"Key"+newKey.toUpperCase(); 
-            document.getElementById("col"+i).innerText=columnKeys[i]; 
+            columnCodes[i]= newKey===" " ? "Space" : "Key"+newKey.toUpperCase(); 
+            document.getElementById("col"+i).innerText = (newKey===" " ? "Space" : newKey.toUpperCase()); 
         }
     });
 }
@@ -254,7 +255,6 @@ function drawKeyLabels(){
             label.className="columnLabel";
             document.body.appendChild(label);
         }
-        // logica corretta per ECHO
         if(currentSong===songs["ECHO"]){
             let labelsMap=["D","F","Space","J","K"];
             label.innerText = labelsMap[i];
