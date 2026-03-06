@@ -1,77 +1,3 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VOCALOID TEST</title>
-<style>
-body{margin:0;overflow:hidden;background:black;font-family:Arial;color:white;}
-#bgImg{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0;transition:opacity 1s;filter:blur(6px) brightness(0.45);}
-#gameCanvas{position:absolute;width:100%;height:100%;z-index:1;}
-#introScreen{position:absolute;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;background:black;z-index:10;opacity:1;transition:opacity 0.5s;}
-#logo{width:350px;margin-bottom:20px;filter:drop-shadow(0 0 20px white);}
-#songTitle{font-size:32px;margin-bottom:5px;transition:transform 0.1s;}
-#difficulty{margin-bottom:20px;font-size:20px;}
-#startBtn,#settingsBtn{padding:10px 20px;font-size:18px;cursor:pointer;background: rgba(255,255,255,0.1);color:white;border:2px solid white;border-radius:6px;margin:5px;}
-#score,#combo,#rank{position:absolute;top:10px;font-size:22px;z-index:5;}
-#score{left:10px;} #combo{left:200px;} #rank{left:360px;}
-.columnLabel{position:absolute;font-size:20px;text-align:center;transform:translateX(-50%);color:white;}
-#settingsPanel{position:absolute;top:50px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);padding:15px;border-radius:8px;display:none;z-index:20;min-width:300px;}
-#settingsTabs button{margin-right:10px;padding:5px 10px;cursor:pointer;}
-#tabContent{margin-top:10px;}
-#keySettings td{border:1px solid rgba(255,255,255,0.3);padding:8px 15px;text-align:center;cursor:pointer;color:white;font-weight:bold;}
-#keySettings td:hover{background:rgba(255,255,255,0.2);}
-</style>
-</head>
-<body>
-
-<img id="bgImg">
-<div id="introScreen">
-<img id="logo" src="Risorsa_1sinny.png" alt="Logo">
-<h1 id="songTitle">BIRDBRAIN</h1>
-<div id="difficulty"></div>
-<select id="songSelector">
-<option value="BIRDBRAIN">BIRDBRAIN</option>
-<option value="Mesmerizer">MESMERIZER</option>
-<option value="ECHO">ECHO</option>
-</select>
-<button id="startBtn">START</button>
-<button id="settingsBtn">IMPOSTAZIONI</button>
-</div>
-
-<div id="settingsPanel">
-<div id="settingsTabs">
-<button id="tabKeysBtn">Tasti e Volume</button>
-<button id="tabSongsBtn">Selezione Canzoni</button>
-</div>
-<div id="tabContent">
-<div id="tabKeys">
-<table id="keySettings"><tr>
-<td id="col0">D</td>
-<td id="col1">F</td>
-<td id="col2">J</td>
-<td id="col3">K</td>
-<td id="col4">K</td>
-</tr></table>
-<div style="margin-top:10px;">Volume: <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5"></div>
-</div>
-<div id="tabSongs" style="display:none;">
-<select id="songSelector2">
-<option value="BIRDBRAIN">BIRDBRAIN</option>
-<option value="Mesmerizer">MESMERIZER</option>
-<option value="ECHO">ECHO</option>
-</select>
-</div>
-</div>
-</div>
-
-<canvas id="gameCanvas"></canvas>
-<div id="score">Punti: 0</div>
-<div id="combo">Combo: 0x</div>
-<div id="rank">Rank: F</div>
-<audio id="bgm"></audio>
-<audio id="bgmMenu" loop></audio>
-
 <script>
 const canvas=document.getElementById("gameCanvas");
 const ctx=canvas.getContext("2d");
@@ -87,7 +13,6 @@ const bgm=document.getElementById("bgm");
 const bgmMenu=document.getElementById("bgmMenu");
 bgmMenu.src="menu_bgm.mp3"; 
 bgmMenu.volume=0.5;
-bgmMenu.play();
 
 const bgImg=document.getElementById("bgImg");
 const scoreDisplay=document.getElementById("score");
@@ -174,7 +99,7 @@ function updateSongUI(){
     updateColumns();
     updateColumnKeys();
     drawKeyLabels();
-    introBPM = currentSong.BPM; // per pulsazione titolo
+    introBPM = currentSong.BPM; // per pulsazione logo
 }
 updateSongUI();
 
@@ -195,20 +120,20 @@ selector2.onchange=function(){
     updateSongUI();
 }
 
-// --- Beat title animation ---
+// --- Beat logo animation ---
 let introBeatTime=0;
 let lastIntroTime=0;
-function animateTitleBeat(delta){
-    introBeatTime+=delta;
-    const beatInterval=60/introBPM;
-    const phase=(introBeatTime%beatInterval)/beatInterval;
-    const scale=1 + 0.1 * Math.sin(phase * 2 * Math.PI);
-    document.getElementById("songTitle").style.transform = `scale(${scale})`;
+function animateLogoBeat(delta){
+    introBeatTime += delta;
+    const beatInterval = 60 / introBPM;
+    const phase = (introBeatTime % beatInterval) / beatInterval;
+    const scale = 1 + 0.1 * Math.sin(phase * 2 * Math.PI);
+    document.getElementById("logo").style.transform = `scale(${scale})`;
 }
 function introLoop(timestamp){
     const delta=(timestamp-lastIntroTime)/1000 || 0;
     lastIntroTime=timestamp;
-    animateTitleBeat(delta);
+    animateLogoBeat(delta);
     requestAnimationFrame(introLoop);
 }
 requestAnimationFrame(introLoop);
@@ -358,8 +283,11 @@ function gameLoop(timestamp){
     rankDisplay.innerText="Rank: "+calculateRank();
     requestAnimationFrame(gameLoop);
 }
+
+// --- Avvia musica menu al primo click ---
+window.addEventListener("load", ()=>{
+    document.body.addEventListener("click", ()=>{
+        bgmMenu.play().catch(e=>console.log("Autoplay bloccato"));
+    }, { once: true });
+});
 </script>
-</body>
-</html>
-</body>
-</html>
