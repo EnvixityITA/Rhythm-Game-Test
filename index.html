@@ -151,11 +151,12 @@ function drawKeyLabels(){
 
 function updateSongUI(song){
     currentSong = song;
-    document.getElementById("songTitle").innerText=song ? song.difficulty.toUpperCase() + " - " + Object.keys(songs).find(k=>songs[k]===song) : "Seleziona una canzone";
+    document.getElementById("songTitle").innerText=song ? Object.keys(songs).find(k=>songs[k]===song) : "Seleziona una canzone";
     updateColumns();
     updateColumnKeys();
     drawKeyLabels();
     introBPM = song ? song.BPM : 140;
+    noteSpeed = song.speed;
 }
 
 // setup song list
@@ -171,7 +172,7 @@ for(let key in songs){
 let introTime=0,lastIntroTime=0;
 function animateLogo(delta){
     introTime += delta;
-    const offset = Math.sin(introTime*2*Math.PI/3)*5; // più leggero
+    const offset = Math.sin(introTime*2*Math.PI/3)*5;
     logo.style.transform = `translateY(${offset}px)`;
 }
 function introLoop(timestamp){
@@ -189,12 +190,9 @@ function generateFullChart(){
     const beat=60/currentSong.BPM;
     const duration=bgm.duration||120;
     for(let t=beat; t<duration; t+=beat){
-        let randOffset = (Math.random()-0.5)*0.2; // distanza leggermente casuale
-        if(currentSong===songs["ECHO"]){
-            let col=Math.floor(Math.random()*5);
-            chart.push({time:t+randOffset,column:col});
-            if(Math.random()<0.35){let extraCol=Math.floor(Math.random()*5); chart.push({time:t+beat*0.2+randOffset,column:extraCol});}
-        }else chart.push({time:t+randOffset,column:Math.floor(4*Math.random())});
+        let randOffset=(Math.random()-0.5)*0.2;
+        let col = Math.floor(Math.random()*columns);
+        chart.push({time:t+randOffset,column:col});
     }
 }
 
@@ -204,7 +202,8 @@ function startGame(){
     bgImg.src=currentSong.bg;
     bgImg.style.opacity=1;
     notes=[]; chart=[]; noteIndex=0;
-    score=0; combo=0; totalHits=0; totalPerfect=0; noteSpeed=currentSong.speed; hitScores=[];
+    score=0; combo=0; totalHits=0; totalPerfect=0; hitScores=[];
+    noteSpeed=currentSong.speed;
     bgm.src=currentSong.mp3; bgm.currentTime=0; bgm.volume=document.getElementById("volumeSlider").value;
     bgm.onloadedmetadata=()=>{
         generateFullChart();
@@ -274,6 +273,11 @@ function gameLoop(timestamp){
     updateNoteColors();
     spawnNotes(bgm.currentTime);
     ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // --- Hit line ---
+    ctx.fillStyle="rgba(255,255,255,0.2)";
+    ctx.fillRect(arrowZoneOffset, canvas.height-70-hitLineHeight/2, arrowZoneWidth, hitLineHeight);
+
     drawColumns();
     drawKeyLabels();
 
@@ -285,12 +289,13 @@ function gameLoop(timestamp){
         const y=note.y;
         ctx.fillStyle=columnColors[note.column];
         ctx.beginPath();
+        const size=30; // triangolo più grande
         switch(columnKeys[note.column]){
-            case "D": ctx.moveTo(x-20,y); ctx.lineTo(x+20,y-20); ctx.lineTo(x+20,y+20); break;
-            case "F": ctx.moveTo(x,y-20); ctx.lineTo(x-20,y+20); ctx.lineTo(x+20,y+20); break;
-            case "J": ctx.moveTo(x,y+20); ctx.lineTo(x-20,y-20); ctx.lineTo(x+20,y-20); break;
-            case "K": ctx.moveTo(x+20,y); ctx.lineTo(x-20,y-20); ctx.lineTo(x-20,y+20); break;
-            case "H": ctx.moveTo(x,y-20); ctx.lineTo(x+20,y); ctx.lineTo(x,y+20); ctx.lineTo(x-20,y); break;
+            case "D": ctx.moveTo(x-size,y); ctx.lineTo(x+size,y-size); ctx.lineTo(x+size,y+size); break;
+            case "F": ctx.moveTo(x,y-size); ctx.lineTo(x-size,y+size); ctx.lineTo(x+size,y+size); break;
+            case "J": ctx.moveTo(x,y+size); ctx.lineTo(x-size,y-size); ctx.lineTo(x+size,y-size); break;
+            case "K": ctx.moveTo(x+size,y); ctx.lineTo(x-size,y-size); ctx.lineTo(x-size,y+size); break;
+            case "H": ctx.moveTo(x,y-size); ctx.lineTo(x+size,y); ctx.lineTo(x,y+size); ctx.lineTo(x-size,y); break;
         }
         ctx.closePath(); ctx.fill();
 
@@ -323,7 +328,7 @@ document.body.addEventListener("click",()=>{
 settingsBtn.onclick=()=>{settingsPanel.style.display=settingsPanel.style.display==="none"?"block":"none";}
 tabKeysBtn.onclick=()=>{tabKeys.style.display="block"; tabSongs.style.display="none";}
 tabSongsBtn.onclick=()=>{tabKeys.style.display="none"; tabSongs.style.display="block";}
-};
+}
 </script>
 </body>
 </html>
