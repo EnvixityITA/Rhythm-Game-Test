@@ -76,11 +76,12 @@ body{margin:0;overflow:hidden;background:black;font-family:Arial;color:white;}
 window.onload=function(){
 const canvas=document.getElementById("gameCanvas");
 const ctx=canvas.getContext("2d");
-let columns = 4;
-let arrowZoneWidth, columnWidth, arrowZoneOffset;
+
+let columns=4;
+let arrowZoneWidth,columnWidth,arrowZoneOffset;
 let columnKeys=[];
 const columnColors=[];
-let hitLineHeight = 35; // Hit line più grande
+let hitLineHeight=35; // hit line più grande
 
 const bgm=document.getElementById("bgm");
 const bgmMenu=document.getElementById("bgmMenu");
@@ -104,16 +105,16 @@ const tabSongs=document.getElementById("tabSongs");
 const logo=document.getElementById("logo");
 
 const songs={
-"BIRDBRAIN":{mp3:"BIRDBRAIN.mp3",BPM:140,difficulty:"MEDIO",color:"yellow",speed:300,bg:"immagine_2026-03-03_204259655.png",silentSections:[[10,15],[60,65],[110,115]]},
+"BIRDBRAIN":{mp3:"BIRDBRAIN.mp3",BPM:140,difficulty:"MEDIO",color:"yellow",speed:300,bg:"immagine_2026-03-03_204259655.png",silentSections:[[10,15],[60,65]]},
 "Mesmerizer":{mp3:"mesmerizer.mp3",BPM:120,difficulty:"DIFFICILE",color:"red",speed:400*1.75,bg:"immagine_2026-03-03_221829535.png",silentSections:[[20,25],[80,85]]},
 "ECHO":{mp3:"SpotiDownloader.com - Echo (feat. Crusher-P) - The Living Tombstone.mp3",BPM:130,difficulty:"INSANA",color:"purple",speed:400*1.85,bg:"immagine_2026-03-05_202041367.png",silentSections:[[0,6],[70,75]]}
 };
 
-let currentSong = songs["BIRDBRAIN"];
+let currentSong=songs["BIRDBRAIN"];
 let notes=[],chart=[],noteIndex=0,hitRatings=[];
 let score=0,combo=0,totalHits=0,totalPerfect=0,noteSpeed=300,gameRunning=false,lastTime=0;
-let introBPM = 140;
-let hitScores = [];
+let introBPM=140;
+let hitScores=[];
 
 function resizeCanvas(){
     canvas.width=window.innerWidth;
@@ -127,8 +128,15 @@ function resizeCanvas(){
 resizeCanvas();
 window.addEventListener("resize",resizeCanvas);
 
-function updateColumns(){ columns = (currentSong===songs["ECHO"])?5:5; columnWidth=arrowZoneWidth/columns; arrowZoneOffset=(canvas.width-arrowZoneWidth)/2;}
-function updateColumnKeys(){ columnKeys = (currentSong===songs["ECHO"])?["D","F","H","J","K"]:["D","F","H","J","K","L"].slice(0,columns);}
+function updateColumns(){
+    if(currentSong===songs["ECHO"]){columns=5;} else{columns=4;}
+    columnWidth=arrowZoneWidth/columns;
+    arrowZoneOffset=(canvas.width-arrowZoneWidth)/2;
+}
+function updateColumnKeys(){
+    if(currentSong===songs["ECHO"]){columnKeys=["D","F","H","J","K"];}
+    else{columnKeys=["D","F","H","J"];}
+}
 function updateNoteColors(){
     if(currentSong===songs["BIRDBRAIN"]) columnColors.splice(0,4,...["#ff0000","#ff8000","#ff40bf","#ffff00"]);
     else if(currentSong===songs["Mesmerizer"]) columnColors.splice(0,4,...["#00ffff","#00bfff","#0080ff","#0040ff"]);
@@ -279,7 +287,7 @@ function gameLoop(timestamp){
     spawnNotes(bgm.currentTime);
     ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.fillStyle="white";
-    ctx.fillRect(arrowZoneOffset,canvas.height-70-hitLineHeight/2,arrowZoneWidth,hitLineHeight); // hit line più spessa e bianca
+    ctx.fillRect(arrowZoneOffset,canvas.height-70-hitLineHeight/2,arrowZoneWidth,hitLineHeight);
     drawColumns();
     drawKeyLabels();
     const missThreshold=canvas.height-20;
